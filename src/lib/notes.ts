@@ -9,6 +9,8 @@ export interface Note {
 }
 
 export const NOTES: Note[] = [
+  { id: 'A5', name: 'A', yPos: 20 },   // Ledger line above
+  { id: 'G5', name: 'G', yPos: 30 },   // Space above line 5
   { id: 'F5', name: 'F', yPos: 40 },   // Line 5 (top)
   { id: 'E5', name: 'E', yPos: 50 },   // Space 4
   { id: 'D5', name: 'D', yPos: 60 },   // Line 4
@@ -17,7 +19,9 @@ export const NOTES: Note[] = [
   { id: 'A4', name: 'A', yPos: 90 },   // Space 2
   { id: 'G4', name: 'G', yPos: 100 },  // Line 2
   { id: 'F4', name: 'F', yPos: 110 },  // Space 1
-  { id: 'E4', name: 'E', yPos: 120 }   // Line 1 (bottom)
+  { id: 'E4', name: 'E', yPos: 120 },  // Line 1 (bottom)
+  { id: 'D4', name: 'D', yPos: 130 },  // Space below line 1
+  { id: 'C4', name: 'C', yPos: 140 },  // Ledger line below (Middle C)
 ];
 
 // All 7 unique letter names used for generating answer choices

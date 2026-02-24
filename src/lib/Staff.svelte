@@ -32,6 +32,18 @@
     style="user-select: none;"
   >𝄞</text>
 
+  <!-- Ledger line for notes on a line position outside the 5-line staff -->
+  {#if yPos % 20 === 0 && (yPos < 40 || yPos > 120)}
+    <line
+      x1={NOTE_X - 15}
+      y1={yPos}
+      x2={NOTE_X + 15}
+      y2={yPos}
+      stroke="black"
+      stroke-width="1.5"
+    />
+  {/if}
+
   <!-- Note head: filled ellipse rotated -20deg for standard note head appearance -->
   <ellipse
     cx={NOTE_X}
