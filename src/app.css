@@ -4,6 +4,10 @@
   padding: 0;
 }
 
+:root {
+  --header-height: 3.2rem;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #f0f2f5;
@@ -13,11 +17,15 @@ body {
 }
 
 header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   background: white;
   border-bottom: 1px solid #e4e4e8;
   padding: 0.85rem 2rem;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .site-brand {
@@ -32,19 +40,94 @@ header {
   color: #7c6fcd;
 }
 
-main {
+/* ── Page layout: sidebar + content ── */
+.page-body {
   flex: 1;
   display: flex;
+  min-height: 0;
+}
+
+.sidebar {
+  position: sticky;
+  top: var(--header-height);
+  width: 240px;
+  height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+  background: white;
+  border-right: 1px solid #e4e4e8;
+  flex-shrink: 0;
+  display: flex;
   flex-direction: column;
+}
+
+.lesson-nav {
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #bbb;
+  padding: 0 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.nav-lesson {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
+  gap: 0.6rem;
+  padding: 0.65rem 1.25rem;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #555;
+  text-align: left;
+  line-height: 1.4;
+  transition: background 0.12s, color 0.12s;
   width: 100%;
 }
 
-main > * {
-  width: 100%;
-  max-width: 560px;
+.nav-lesson:hover {
+  background: #f5f5ff;
+  color: #1a1a2e;
+}
+
+.nav-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  background: #e4e4e8;
+  color: #888;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  flex: 1;
+}
+
+.nav-chevron {
+  font-size: 0.75rem;
+  color: #bbb;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+main {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+  min-width: 0;
 }
 
 footer {
@@ -54,14 +137,301 @@ footer {
   text-align: center;
   font-size: 0.85rem;
   color: #999;
+  flex-shrink: 0;
 }
 
-h1 {
-  text-align: center;
+/* ── Lesson content ── */
+.lesson {
+  max-width: 700px;
+}
+
+.lesson-title {
   font-size: 1.75rem;
   font-weight: 700;
   color: #1a1a2e;
+  margin-bottom: 2rem;
+}
+
+.lesson-section {
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e4e4e8;
+}
+
+.section-text {
+  color: #444;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+  font-size: 1.075rem;
+}
+
+.section-text:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Note pills ── */
+.note-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  align-items: center;
+}
+
+.note-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #1a1a2e;
+  color: white;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pill-repeat {
+  background: #7c6fcd;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ── Hand diagram ── */
+.hand-diagram {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.hand-card {
+  background: white;
+  border: 1px solid #e4e4e8;
+  border-radius: 12px;
+  padding: 1.25rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.hand-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7c6fcd;
+  margin-bottom: 0.85rem;
+  text-align: center;
+}
+
+.fingers {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.finger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0.3rem;
+  background: #f0f2f5;
+  border-radius: 8px;
+  min-width: 40px;
+}
+
+.f-thumb {
+  background: #e8e8ff;
+  border: 2px solid #7c6fcd;
+}
+
+.f-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.f-name {
+  font-size: 0.6rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* ── Stave SVG in lesson ── */
+.stave-svg {
+  margin: 1rem 0;
+}
+
+.mnemonic-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.mnemonic-item {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* ── Note reference (lines / spaces) ── */
+.note-reference {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.ref-col {
+  flex: 1;
+  min-width: 160px;
+  background: white;
+  border: 1px solid #e4e4e8;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.ref-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.2rem;
+}
+
+.ref-subtitle {
+  font-size: 0.8rem;
+  color: #999;
   margin-bottom: 0.5rem;
+}
+
+.mnemonic-tag {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #7c6fcd;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.ref-notes {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ref-note {
+  padding: 0.3rem 0.6rem;
+  background: #1a1a2e;
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+/* ── Sidebar sub-lesson (quiz link) ── */
+.nav-sublesson {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 1.25rem 0.45rem 3rem;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #888;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.nav-sublesson::before {
+  content: '↳';
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin-left: -1.2rem;
+}
+
+.nav-sublesson:hover {
+  background: #f5f5ff;
+  color: #1a1a2e;
+}
+
+.nav-sublesson.active {
+  background: #f0f0ff;
+  color: #1a1a2e;
+  font-weight: 700;
+  border-left-color: #7c6fcd;
+}
+
+/* ── Quiz breadcrumb nav ── */
+.quiz-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+  color: #7c6fcd;
+  cursor: pointer;
+  font-weight: 600;
+  transition: color 0.12s;
+}
+
+.btn-back:hover {
+  color: #5a4fb5;
+}
+
+.breadcrumb-sep {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.breadcrumb-current {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+/* ── Continue button ── */
+.lesson-next {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e4e4e8;
+}
+
+.btn-lesson-next {
+  padding: 0.65rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-lesson-next:hover {
+  background: #7c6fcd;
+}
+
+/* ── Quiz container (centred within main) ── */
+.quiz-container {
+  max-width: 560px;
 }
 
 .score {
@@ -380,4 +750,43 @@ h1 {
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
   margin-left: auto;
+}
+
+/* ── Responsive: stack sidebar on small screens ── */
+@media (max-width: 600px) {
+  .page-body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #e4e4e8;
+  }
+
+  .lesson-nav {
+    flex-direction: row;
+    padding: 0;
+    overflow-x: auto;
+  }
+
+  .nav-heading {
+    display: none;
+  }
+
+  .nav-lesson {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+
+  main {
+    padding: 1.25rem 1rem;
+  }
 }
