@@ -24,7 +24,7 @@
 @layer components {
   /* Nav lesson buttons: border-left-only trick + responsive border-bottom */
   .nav-lesson {
-    @apply flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-[#6b6455] text-left leading-[1.4] transition-colors duration-[120ms] w-full hover:bg-[#f5f0e8] hover:text-navy;
+    @apply flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-[#6b6455] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy;
     border: none;
     border-left: 3px solid transparent;
   }
