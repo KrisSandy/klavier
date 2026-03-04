@@ -3,30 +3,6 @@
   import Staff from "./lib/Staff.svelte";
   import SongStaff from "./lib/SongStaff.svelte";
 
-  // ── Inline SVG treble clef font-size fix (Android Chrome bug) ──────────────
-  // SVG font-size doesn't scale with viewBox on Android Chrome; compute in CSS px.
-  let inlineSvg1El: SVGSVGElement | null = $state(null);
-  let inlineSvg2El: SVGSVGElement | null = $state(null);
-  let inlineClefFs1 = $state(170);
-  let inlineClefFs2 = $state(170);
-
-  function watchClef(
-    el: SVGSVGElement,
-    setter: (v: number) => void,
-  ): () => void {
-    const refresh = () => {
-      const w = el.getBoundingClientRect().width;
-      if (w > 0) setter(170 * w / 500);
-    };
-    refresh();
-    const ro = new ResizeObserver(refresh);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }
-
-  $effect(() => { if (inlineSvg1El) return watchClef(inlineSvg1El, (v) => (inlineClefFs1 = v)); });
-  $effect(() => { if (inlineSvg2El) return watchClef(inlineSvg2El, (v) => (inlineClefFs2 = v)); });
-
   // ── Lesson navigation ───────────────────────────────────────────────────────
   let activeLesson = $state(1);
   let lesson2View = $state<"lesson" | "quiz">("lesson");
@@ -602,12 +578,11 @@
               follow from there.
             </p>
             <svg
-              bind:this={inlineSvg1El}
               class="my-4"
               viewBox="0 -50 500 230"
               xmlns="http://www.w3.org/2000/svg"
               width="100%"
-              style="max-width:500px;display:block;"
+              style="max-width:500px;display:block;container-type:inline-size;"
             >
               <line
                 x1="30"
@@ -654,7 +629,7 @@
                 y="155"
                 font-family="serif"
                 fill="#333"
-                style="font-size: {inlineClefFs1}px; user-select: none;">𝄞</text
+                style="font-size: 34cqw; user-select: none;">𝄞</text
               >
               <!-- G4 marker on line 2 (y=100) -->
               <ellipse
@@ -696,12 +671,11 @@
               note. Two mnemonics help you remember them:
             </p>
             <svg
-              bind:this={inlineSvg2El}
               class="my-4"
               viewBox="0 -50 500 230"
               xmlns="http://www.w3.org/2000/svg"
               width="100%"
-              style="max-width:500px;display:block;"
+              style="max-width:500px;display:block;container-type:inline-size;"
             >
               <line
                 x1="30"
@@ -748,7 +722,7 @@
                 y="155"
                 font-family="serif"
                 fill="#333"
-                style="font-size: {inlineClefFs2}px; user-select: none;">𝄞</text
+                style="font-size: 34cqw; user-select: none;">𝄞</text
               >
               <text
                 x="430"
