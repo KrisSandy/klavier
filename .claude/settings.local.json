@@ -5,7 +5,10 @@
       "Bash(ls -la /Users/sandy/Dev/klavier/vite.config.*)",
       "Bash(npm install -D tailwindcss @tailwindcss/vite)",
       "Bash(npm run build)",
-      "WebFetch(domain:tweakcn.com)"
+      "WebFetch(domain:tweakcn.com)",
+      "Bash(gh issue view 1 --repo KrisSandy/klavier)",
+      "WebFetch(domain:en.m.wikipedia.org)",
+      "WebFetch(domain:upload.wikimedia.org)"
     ]
   }
 }
