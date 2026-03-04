@@ -7,32 +7,47 @@
   // Notes on or below the middle line (B4, y>=80) get stems up;
   // notes above the middle line get stems down.
   const stemUp = $derived(yPos >= 80);
+
+  // Android Chrome bug: SVG font-size doesn't scale with viewBox coordinate transform.
+  // Fix: measure actual rendered width and compute font-size in CSS px explicitly.
+  let svgEl: SVGSVGElement | null = $state(null);
+  let clefFs = $state(170);
+
+  $effect(() => {
+    const el = svgEl;
+    if (!el) return;
+    const refresh = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) clefFs = 170 * w / 500;
+    };
+    refresh();
+    const ro = new ResizeObserver(refresh);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
 </script>
 
-<!--
-  container-type: inline-size makes this SVG a CSS container.
-  Inside it, font-size: 34cqw resolves to 34% of the SVG's rendered CSS width,
-  which equals 170/500 * rendered_width — correctly scaling the clef on all browsers
-  including Android Chrome where SVG font-size attributes don't scale with viewBox.
--->
 <svg
+  bind:this={svgEl}
   viewBox="0 -50 500 230"
   xmlns="http://www.w3.org/2000/svg"
   width="100%"
-  style="max-width: 500px; display: block; margin: 0 auto; container-type: inline-size;"
+  style="max-width: 500px; display: block; margin: 0 auto;"
 >
   <!-- 5 staff lines -->
   {#each STAFF_LINES as lineY}
     <line x1="30" y1={lineY} x2="480" y2={lineY} stroke="black" stroke-width="1.5" />
   {/each}
 
-  <!-- Treble clef: 34cqw = 170/500 * container-width in CSS px, scales with SVG on all browsers -->
+  <!-- Treble clef: Unicode U+1D11E. The glyph baseline is placed at y=155 so
+       that the curl at the bottom sits just below the staff and the top
+       rises above the top line. font-size=170 spans the full staff height. -->
   <text
     x="18"
     y="155"
     font-family="serif"
     fill="black"
-    style="font-size: 34cqw; user-select: none;"
+    style="font-size: {clefFs}px; user-select: none;"
   >𝄞</text>
 
   <!-- Ledger line for notes on a line position outside the 5-line staff -->
