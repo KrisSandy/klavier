@@ -4,7 +4,8 @@
       "Bash(npm install --save-dev typescript)",
       "Bash(ls -la /Users/sandy/Dev/klavier/vite.config.*)",
       "Bash(npm install -D tailwindcss @tailwindcss/vite)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "WebFetch(domain:tweakcn.com)"
     ]
   }
 }

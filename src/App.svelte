@@ -131,19 +131,19 @@
   );
 </script>
 
-<header class="sticky top-0 z-[100] bg-white border-b border-[#e4e4e8] px-8 py-[0.85rem] flex items-center shrink-0">
+<header class="sticky top-0 z-[100] bg-[#faf9f5] border-b border-[#dad9d4] px-8 py-[0.85rem] flex items-center shrink-0">
   <a class="text-[1.2rem] font-extrabold text-navy no-underline tracking-[-.02em] hover:text-purple transition-colors" href="/">Klavier.life</a>
 </header>
 
 <div class="flex-1 flex min-h-0 max-sm:flex-col">
-  <aside class="sticky top-[var(--header-height)] w-60 h-[calc(100vh-var(--header-height))] overflow-y-auto bg-white border-r border-[#e4e4e8] shrink-0 flex flex-col max-sm:static max-sm:w-full max-sm:h-auto max-sm:border-r-0 max-sm:border-b">
+  <aside class="sticky top-[var(--header-height)] w-60 h-[calc(100vh-var(--header-height))] overflow-y-auto bg-[#faf9f5] border-r border-[#dad9d4] shrink-0 flex flex-col max-sm:static max-sm:w-full max-sm:h-auto max-sm:border-r-0 max-sm:border-b">
     <nav class="py-6 flex flex-col max-sm:flex-row max-sm:p-0 max-sm:overflow-x-auto">
-      <p class="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[#bbb] px-5 mb-2 max-sm:hidden">Lessons</p>
+      <p class="text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[#b4b2a7] px-5 mb-2 max-sm:hidden">Lessons</p>
 
       <button class="nav-lesson" onclick={() => (lesson1Expanded = !lesson1Expanded)}>
-        <span class="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] bg-[#e4e4e8] text-[#888] rounded-full text-[0.75rem] font-bold shrink-0">1</span>
+        <span class="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] bg-[#e9e6dc] text-[#9a9287] rounded-full text-[0.75rem] font-bold shrink-0">1</span>
         <span class="flex-1">Notes & Hand Numbers</span>
-        <span class="text-[0.75rem] text-[#bbb] shrink-0 leading-none">{lesson1Expanded ? "▾" : "▸"}</span>
+        <span class="text-[0.75rem] text-[#b4b2a7] shrink-0 leading-none">{lesson1Expanded ? "▾" : "▸"}</span>
       </button>
       {#if lesson1Expanded}
         <button
@@ -155,9 +155,9 @@
       {/if}
 
       <button class="nav-lesson" onclick={() => (lesson2Expanded = !lesson2Expanded)}>
-        <span class="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] bg-[#e4e4e8] text-[#888] rounded-full text-[0.75rem] font-bold shrink-0">2</span>
+        <span class="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] bg-[#e9e6dc] text-[#9a9287] rounded-full text-[0.75rem] font-bold shrink-0">2</span>
         <span class="flex-1">The Stave</span>
-        <span class="text-[0.75rem] text-[#bbb] shrink-0 leading-none">{lesson2Expanded ? "▾" : "▸"}</span>
+        <span class="text-[0.75rem] text-[#b4b2a7] shrink-0 leading-none">{lesson2Expanded ? "▾" : "▸"}</span>
       </button>
       {#if lesson2Expanded}
         <button
@@ -183,7 +183,7 @@
         <h1 class="text-[1.75rem] font-bold text-navy mb-8">Lesson 1: Notes & Hand Numbers</h1>
 
         <section class="mb-10">
-          <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#e4e4e8]">The Musical Alphabet</h2>
+          <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Musical Alphabet</h2>
           <p class="text-[#444] leading-[1.7] mb-3 text-[1.075rem]">
             Music uses just 7 letter names to describe every note:
             <strong>A, B, C, D, E, F, G</strong>. After G the sequence repeats
@@ -203,7 +203,7 @@
         </section>
 
         <section class="mb-10">
-          <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#e4e4e8]">Finger Numbers</h2>
+          <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Finger Numbers</h2>
           <p class="text-[#444] leading-[1.7] mb-3 text-[1.075rem]">
             Each finger is given a number from <strong>1</strong> (thumb) to
             <strong>5</strong> (pinky). Both hands use the same numbering. Sheet
@@ -211,30 +211,30 @@
             to use on each note.
           </p>
           <div class="flex gap-5 flex-wrap my-4">
-            <div class="bg-white border border-[#e4e4e8] rounded-xl p-5 flex-1 min-w-[180px]">
+            <div class="bg-white border border-[#dad9d4] rounded-xl p-5 flex-1 min-w-[180px]">
               <div class="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-purple mb-[0.85rem] text-center">Left Hand</div>
               <div class="flex gap-[0.35rem] justify-center">
                 {#each [["5","Pinky"],["4","Ring"],["3","Middle"],["2","Index"]] as [num, name]}
-                  <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#f0f2f5] rounded-lg min-w-[40px]">
+                  <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#f0ece4] rounded-lg min-w-[40px]">
                     <span class="text-[1.2rem] font-extrabold text-navy">{num}</span>
                     <span class="text-[0.6rem] text-[#888] uppercase tracking-[0.03em] text-center">{name}</span>
                   </div>
                 {/each}
-                <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#e8e8ff] border-2 border-purple rounded-lg min-w-[40px]">
+                <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#f5e9de] border-2 border-purple rounded-lg min-w-[40px]">
                   <span class="text-[1.2rem] font-extrabold text-navy">1</span>
                   <span class="text-[0.6rem] text-[#888] uppercase tracking-[0.03em] text-center">Thumb</span>
                 </div>
               </div>
             </div>
-            <div class="bg-white border border-[#e4e4e8] rounded-xl p-5 flex-1 min-w-[180px]">
+            <div class="bg-white border border-[#dad9d4] rounded-xl p-5 flex-1 min-w-[180px]">
               <div class="text-[0.8rem] font-bold uppercase tracking-[0.08em] text-purple mb-[0.85rem] text-center">Right Hand</div>
               <div class="flex gap-[0.35rem] justify-center">
-                <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#e8e8ff] border-2 border-purple rounded-lg min-w-[40px]">
+                <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#f5e9de] border-2 border-purple rounded-lg min-w-[40px]">
                   <span class="text-[1.2rem] font-extrabold text-navy">1</span>
                   <span class="text-[0.6rem] text-[#888] uppercase tracking-[0.03em] text-center">Thumb</span>
                 </div>
                 {#each [["2","Index"],["3","Middle"],["4","Ring"],["5","Pinky"]] as [num, name]}
-                  <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#f0f2f5] rounded-lg min-w-[40px]">
+                  <div class="flex flex-col items-center gap-[0.2rem] py-2 px-[0.3rem] bg-[#f0ece4] rounded-lg min-w-[40px]">
                     <span class="text-[1.2rem] font-extrabold text-navy">{num}</span>
                     <span class="text-[0.6rem] text-[#888] uppercase tracking-[0.03em] text-center">{name}</span>
                   </div>
@@ -249,7 +249,7 @@
           </p>
         </section>
 
-        <div class="mt-8 pt-6 border-t border-[#e4e4e8]">
+        <div class="mt-8 pt-6 border-t border-[#dad9d4]">
           <button
             class="py-[0.65rem] px-8 text-base font-semibold bg-navy text-white border-none rounded-lg cursor-pointer transition-colors hover:bg-purple"
             onclick={() => { activeLesson = 2; lesson2View = "lesson"; lesson2Expanded = true; }}
@@ -265,7 +265,7 @@
           <h1 class="text-[1.75rem] font-bold text-navy mb-8">Lesson 2: The Stave</h1>
 
           <section class="mb-10">
-            <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#e4e4e8]">The Five-Line Stave</h2>
+            <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Five-Line Stave</h2>
             <p class="text-[#444] leading-[1.7] mb-3 text-[1.075rem]">
               Music is written on a <strong>stave</strong> (also called a staff)
               — five horizontal lines running left to right. Notes are placed
@@ -297,7 +297,7 @@
           </section>
 
           <section class="mb-10">
-            <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#e4e4e8]">The Treble Clef</h2>
+            <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Treble Clef</h2>
             <p class="text-[#444] leading-[1.7] mb-3 text-[1.075rem]">
               The <strong>treble clef</strong> (𝄞) sits at the start of the
               stave and tells us which notes belong to which lines and spaces.
@@ -325,14 +325,14 @@
               <line x1="30" y1="120" x2="480" y2="120" stroke="#333" stroke-width="1.5" />
               <text x="18" y="155" font-size="170" font-family="serif" fill="#333" style="user-select:none">𝄞</text>
               <!-- G4 marker on line 2 (y=100) -->
-              <ellipse cx="320" cy="100" rx="10" ry="7" fill="#7c6fcd" opacity="0.85" transform="rotate(-20,320,100)" />
-              <line x1="329" y1="100" x2="329" y2="65" stroke="#7c6fcd" stroke-width="1.5" />
-              <text x="345" y="104" font-size="14" font-family="sans-serif" fill="#7c6fcd" font-weight="bold">G4 — line 2</text>
+              <ellipse cx="320" cy="100" rx="10" ry="7" fill="#ce7e4f" opacity="0.85" transform="rotate(-20,320,100)" />
+              <line x1="329" y1="100" x2="329" y2="65" stroke="#ce7e4f" stroke-width="1.5" />
+              <text x="345" y="104" font-size="14" font-family="sans-serif" fill="#ce7e4f" font-weight="bold">G4 — line 2</text>
             </svg>
           </section>
 
           <section class="mb-10">
-            <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#e4e4e8]">Notes on the Stave</h2>
+            <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Notes on the Stave</h2>
             <p class="text-[#444] leading-[1.7] mb-3 text-[1.075rem]">
               In the treble clef, lines and spaces each represent a specific
               note. Two mnemonics help you remember them:
@@ -350,11 +350,11 @@
               <line x1="30" y1="100" x2="408" y2="100" stroke="#333" stroke-width="1.5" />
               <line x1="30" y1="120" x2="408" y2="120" stroke="#333" stroke-width="1.5" />
               <text x="18" y="155" font-size="170" font-family="serif" fill="#333" style="user-select:none">𝄞</text>
-              <text x="430" y="44" font-size="14" font-family="sans-serif" fill="#1a1a2e" font-weight="bold">F</text>
-              <text x="430" y="64" font-size="14" font-family="sans-serif" fill="#1a1a2e" font-weight="bold">D</text>
-              <text x="430" y="84" font-size="14" font-family="sans-serif" fill="#1a1a2e" font-weight="bold">B</text>
-              <text x="430" y="104" font-size="14" font-family="sans-serif" fill="#1a1a2e" font-weight="bold">G</text>
-              <text x="430" y="124" font-size="14" font-family="sans-serif" fill="#1a1a2e" font-weight="bold">E</text>
+              <text x="430" y="44" font-size="14" font-family="sans-serif" fill="#3d3929" font-weight="bold">F</text>
+              <text x="430" y="64" font-size="14" font-family="sans-serif" fill="#3d3929" font-weight="bold">D</text>
+              <text x="430" y="84" font-size="14" font-family="sans-serif" fill="#3d3929" font-weight="bold">B</text>
+              <text x="430" y="104" font-size="14" font-family="sans-serif" fill="#3d3929" font-weight="bold">G</text>
+              <text x="430" y="124" font-size="14" font-family="sans-serif" fill="#3d3929" font-weight="bold">E</text>
               <text x="416" y="54" font-size="13" font-family="sans-serif" fill="#555">E</text>
               <text x="416" y="74" font-size="13" font-family="sans-serif" fill="#555">C</text>
               <text x="416" y="94" font-size="13" font-family="sans-serif" fill="#555">A</text>
@@ -372,7 +372,7 @@
             </p>
           </section>
 
-          <div class="mt-8 pt-6 border-t border-[#e4e4e8]">
+          <div class="mt-8 pt-6 border-t border-[#dad9d4]">
             <button class="py-[0.65rem] px-8 text-base font-semibold bg-navy text-white border-none rounded-lg cursor-pointer transition-colors hover:bg-purple" onclick={startQuiz}>
               Start Quiz &rarr;
             </button>
@@ -380,7 +380,7 @@
         {:else}
           <!-- ── LESSON 2 QUIZ SUBPAGE ──────────────────────────────────────── -->
           <nav class="flex items-center gap-2 mb-6">
-            <button class="bg-transparent border-none p-0 text-[0.9rem] text-purple cursor-pointer font-semibold transition-colors hover:text-[#5a4fb5]" onclick={() => (lesson2View = "lesson")}>
+            <button class="bg-transparent border-none p-0 text-[0.9rem] text-purple cursor-pointer font-semibold transition-colors hover:text-[#b86d42]" onclick={() => (lesson2View = "lesson")}>
               &larr; Lesson 2
             </button>
             <span class="text-[#ccc] text-[0.9rem]">/</span>
@@ -461,7 +461,7 @@
                   </div>
 
                   {#if bestEntry && worstEntry}
-                    <div class="w-full flex flex-col gap-2 bg-[#f0f2f5] rounded-xl p-4">
+                    <div class="w-full flex flex-col gap-2 bg-[#f0ece4] rounded-xl p-4">
                       <div class="flex items-center gap-3">
                         <span class="text-[0.85rem] text-[#666] w-24 shrink-0">Best time</span>
                         <span class="text-base font-bold tabular-nums min-w-12 text-correct">{(bestEntry.timeMs / 1000).toFixed(1)}s</span>
@@ -499,6 +499,6 @@
   </main>
 </div>
 
-<footer class="bg-white border-t border-[#e4e4e8] px-8 py-[0.85rem] text-center text-[0.85rem] text-[#999] shrink-0">
+<footer class="bg-[#faf9f5] border-t border-[#dad9d4] px-8 py-[0.85rem] text-center text-[0.85rem] text-[#9a9287] shrink-0">
   <p>Klavier.life &mdash; Practice reading music notes</p>
 </footer>
