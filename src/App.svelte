@@ -448,7 +448,7 @@
               viewBox="0 0 500 145"
               xmlns="http://www.w3.org/2000/svg"
               width="100%"
-              style="max-width:500px;display:block;overflow:visible;"
+              style="max-width:500px;display:block;"
             >
               <line
                 x1="30"
@@ -579,10 +579,10 @@
             </p>
             <svg
               class="my-4"
-              viewBox="0 0 500 180"
+              viewBox="0 -50 500 230"
               xmlns="http://www.w3.org/2000/svg"
               width="100%"
-              style="max-width:500px;display:block;overflow:visible;"
+              style="max-width:500px;display:block;"
             >
               <line
                 x1="30"
@@ -673,10 +673,10 @@
             </p>
             <svg
               class="my-4"
-              viewBox="0 0 500 180"
+              viewBox="0 -50 500 230"
               xmlns="http://www.w3.org/2000/svg"
               width="100%"
-              style="max-width:500px;display:block;overflow:visible;"
+              style="max-width:500px;display:block;"
             >
               <line
                 x1="30"
@@ -850,7 +850,7 @@
               </p>
 
               <div
-                class="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] p-8 flex flex-col gap-5"
+                class="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] p-4 sm:p-8 flex flex-col gap-5"
               >
                 <div class="py-2">
                   <Staff yPos={currentNote.yPos} />
@@ -905,7 +905,7 @@
               </div>
             {:else if finished}
               <div
-                class="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] p-8 flex flex-col items-center gap-6"
+                class="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] p-4 sm:p-8 flex flex-col items-center gap-6"
               >
                 <h2 class="text-2xl font-bold text-navy">Quiz Complete</h2>
 
@@ -920,7 +920,7 @@
 
                   <div class="flex gap-6">
                     <div
-                      class="flex flex-col items-center gap-1 py-4 px-8 rounded-xl border-2 bg-correct-bg border-correct text-correct-text"
+                      class="flex flex-col items-center gap-1 py-4 px-5 sm:px-8 rounded-xl border-2 bg-correct-bg border-correct text-correct-text"
                     >
                       <span class="text-[2.5rem] font-extrabold leading-none"
                         >{score}</span
@@ -931,7 +931,7 @@
                       >
                     </div>
                     <div
-                      class="flex flex-col items-center gap-1 py-4 px-8 rounded-xl border-2 bg-wrong-bg border-wrong text-wrong-text"
+                      class="flex flex-col items-center gap-1 py-4 px-5 sm:px-8 rounded-xl border-2 bg-wrong-bg border-wrong text-wrong-text"
                     >
                       <span class="text-[2.5rem] font-extrabold leading-none"
                         >{total - score}</span

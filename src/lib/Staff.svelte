@@ -10,10 +10,10 @@
 </script>
 
 <svg
-  viewBox="0 0 500 180"
+  viewBox="0 -50 500 230"
   xmlns="http://www.w3.org/2000/svg"
   width="100%"
-  style="max-width: 500px; display: block; margin: 0 auto; overflow: visible;"
+  style="max-width: 500px; display: block; margin: 0 auto;"
 >
   <!-- 5 staff lines -->
   {#each STAFF_LINES as lineY}

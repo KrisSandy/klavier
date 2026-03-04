@@ -48,9 +48,35 @@
     opacity: 0.5;
     margin-left: -1.2rem;
   }
+  .nav-lesson.active {
+    @apply bg-[#ede8de] text-navy font-bold;
+    border-left-color: #ce7e4f;
+  }
+  @media (max-width: 640px) {
+    .nav-lesson.active {
+      border-left-color: transparent;
+      border-bottom-color: #ce7e4f;
+    }
+  }
+
   .nav-sublesson.active {
     @apply bg-[#ede8de] text-navy font-bold;
     border-left-color: #ce7e4f;
+  }
+  @media (max-width: 640px) {
+    .nav-sublesson {
+      @apply shrink-0 px-4 py-3 text-center whitespace-nowrap;
+      width: auto;
+      border-left: none;
+      border-bottom: 3px solid transparent;
+    }
+    .nav-sublesson::before {
+      display: none;
+    }
+    .nav-sublesson.active {
+      border-left-color: transparent;
+      border-bottom-color: #ce7e4f;
+    }
   }
 
   /* Answer buttons: multi-state (correct / wrong / dimmed) */

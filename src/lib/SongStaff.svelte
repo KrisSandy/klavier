@@ -26,10 +26,10 @@
 </script>
 
 <svg
-  viewBox="0 0 {svgWidth} 175"
+  viewBox="0 -50 {svgWidth} 225"
   xmlns="http://www.w3.org/2000/svg"
   width="100%"
-  style="display: block; overflow: visible;"
+  style="display: block;"
 >
   <!-- Staff lines -->
   {#each STAFF_LINES as lineY}
