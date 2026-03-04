@@ -24,32 +24,21 @@
     Math.max(320, NOTE_START_X + notes.length * NOTE_SPACING + 20),
   );
 
-  // Android Chrome bug: SVG font-size doesn't scale with viewBox coordinate transform.
-  // Fix: measure actual rendered width and compute font-size in CSS px explicitly.
-  let svgEl: SVGSVGElement | null = $state(null);
-  let clefFs = $state(170);
-
-  $effect(() => {
-    const el = svgEl;
-    if (!el) return;
-    const vbw = svgWidth;
-    const refresh = () => {
-      const w = el.getBoundingClientRect().width;
-      if (w > 0) clefFs = 170 * w / vbw;
-    };
-    refresh();
-    const ro = new ResizeObserver(refresh);
-    ro.observe(el);
-    return () => ro.disconnect();
-  });
+  // cqw font-size: 170/svgWidth * 100 gives "font-size as % of SVG rendered width"
+  // e.g. 7 notes → svgWidth=479 → 35.49cqw. On 361px mobile: 35.49*3.61=128px CSS.
+  const clefCqw = $derived((170 / svgWidth * 100).toFixed(4));
 </script>
 
+<!--
+  container-type: inline-size makes this SVG a CSS container.
+  clefCqw resolves to the correct CSS pixel size on all browsers including
+  Android Chrome where SVG font-size attributes don't scale with viewBox.
+-->
 <svg
-  bind:this={svgEl}
   viewBox="0 -50 {svgWidth} 225"
   xmlns="http://www.w3.org/2000/svg"
   width="100%"
-  style="display: block;"
+  style="display: block; container-type: inline-size;"
 >
   <!-- Staff lines -->
   {#each STAFF_LINES as lineY}
@@ -63,13 +52,13 @@
     />
   {/each}
 
-  <!-- Treble clef -->
+  <!-- Treble clef: clefCqw% of container width = correct CSS px on all browsers -->
   <text
     x="18"
     y="155"
     font-family="serif"
     fill="black"
-    style="font-size: {clefFs}px; user-select: none;"
+    style="font-size: {clefCqw}cqw; user-select: none;"
   >𝄞</text>
 
   <!-- Notes -->
