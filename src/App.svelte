@@ -1,6 +1,7 @@
 <script lang="ts">
   import { NOTES, ALL_LETTERS, type Note } from "./lib/notes";
   import Staff from "./lib/Staff.svelte";
+  import SongStaff from "./lib/SongStaff.svelte";
 
   // ── Lesson navigation ───────────────────────────────────────────────────────
   let activeLesson = $state(1);
@@ -129,6 +130,25 @@
       ? history.reduce((w, h) => (h.timeMs > w.timeMs ? h : w))
       : null,
   );
+
+  // ── Songs ────────────────────────────────────────────────────────────────────
+  let activeSong = $state<string | null>(null);
+
+  const kushiTune: string[][] = [
+    ["F#4", "C#5", "B4", "C#5", "B4", "C#5", "E5", "C#5"],
+    ["F#4", "C#5", "B4", "C#5", "E5", "C#5"],
+    ["B4", "A#4", "G#4", "A#4", "G#4", "A#4", "C#5", "B4", "A#4", "G#4"],
+    ["A#4", "G#4", "A#4", "C#5", "B4"],
+    ["E4", "F#4", "A4", "E4", "F#4", "A4", "F#4"],
+    ["E4", "C#4"],
+    ["E4", "F#4", "A4", "E4", "F#4", "A4", "F#4"],
+    ["C#5", "D5", "C#5", "A4", "F#4", "F4"],
+    ["C#5", "D5", "C#5", "A4", "F4", "F#4"],
+    ["A#4", "G#4", "A#4", "C#5", "B4", "A#4", "G#4"],
+    ["A#4", "G#4", "A#4", "C#5", "B4"],
+    ["E4", "F#4", "A4", "E4", "F#4", "A4", "F#4"],
+    ["E4", "C#4", "E4", "F#4", "A4", "E4", "F#4", "A4", "F#4"],
+  ];
 </script>
 
 <header
@@ -169,7 +189,10 @@
       {#if lesson1Expanded}
         <button
           class="nav-sublesson {activeLesson === 1 ? 'active' : ''}"
-          onclick={() => (activeLesson = 1)}
+          onclick={() => {
+            activeLesson = 1;
+            activeSong = null;
+          }}
         >
           Lesson
         </button>
@@ -196,6 +219,7 @@
           onclick={() => {
             activeLesson = 2;
             lesson2View = "lesson";
+            activeSong = null;
           }}
         >
           Lesson
@@ -207,18 +231,61 @@
           onclick={() => {
             if (lesson2View !== "quiz") startQuiz();
             activeLesson = 2;
+            activeSong = null;
           }}
         >
           Quiz
         </button>
       {/if}
+
+      <div class="border-t border-[#dad9d4] my-4 max-sm:hidden"></div>
+      <p
+        class="text-[0.7rem] font-bold uppercase tracking-widest text-[#b4b2a7] px-5 mb-2 max-sm:hidden"
+      >
+        Songs
+      </p>
+
+      <button
+        class="nav-lesson {activeSong === 'kushi' ? 'active' : ''}"
+        onclick={() => {
+          activeSong = "kushi";
+        }}
+      >
+        <span
+          class="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] bg-[#e9e6dc] text-[#9a9287] rounded-full text-[0.75rem] font-bold shrink-0"
+          >♪</span
+        >
+        <span class="flex-1">Kushi</span>
+      </button>
     </nav>
   </aside>
 
   <main
     class="flex-1 py-8 px-6 overflow-y-auto min-w-0 max-sm:py-5 max-sm:px-4"
   >
-    {#if activeLesson === 1}
+    {#if activeSong === "kushi"}
+      <!-- ── SONG: Kushi ───────────────────────────────────────────────────── -->
+      <div class="max-w-175">
+        <h1 class="text-[1.75rem] font-bold text-navy mb-1">Kushi</h1>
+        <p class="text-[#888] text-[0.9rem] mb-8">Treble clef · Key of F♯ minor</p>
+
+        <section class="mb-10">
+          <h2
+            class="text-[1.1rem] font-bold text-navy mb-4 pb-2 border-b-2 border-[#dad9d4]"
+          >
+            Tune
+          </h2>
+          <div class="flex flex-col gap-6">
+            {#each kushiTune as line, i}
+              <div>
+                <p class="text-[0.65rem] text-[#b4b2a7] mb-1">Line {i + 1}</p>
+                <SongStaff notes={line} />
+              </div>
+            {/each}
+          </div>
+        </section>
+      </div>
+    {:else if activeLesson === 1}
       <!-- ── LESSON 1: Notes & Hand Numbers ──────────────────────────────── -->
       <div class="max-w-175">
         <h1 class="text-[1.75rem] font-bold text-navy mb-8">
