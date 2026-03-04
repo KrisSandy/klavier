@@ -7,9 +7,28 @@
   // Notes on or below the middle line (B4, y>=80) get stems up;
   // notes above the middle line get stems down.
   const stemUp = $derived(yPos >= 80);
+
+  // Android Chrome bug: SVG font-size doesn't scale with viewBox coordinate transform.
+  // Fix: measure actual rendered width and compute font-size in CSS px explicitly.
+  let svgEl: SVGSVGElement | null = $state(null);
+  let clefFs = $state(170);
+
+  $effect(() => {
+    const el = svgEl;
+    if (!el) return;
+    const refresh = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) clefFs = 170 * w / 500;
+    };
+    refresh();
+    const ro = new ResizeObserver(refresh);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
 </script>
 
 <svg
+  bind:this={svgEl}
   viewBox="0 -50 500 230"
   xmlns="http://www.w3.org/2000/svg"
   width="100%"
@@ -26,10 +45,9 @@
   <text
     x="18"
     y="155"
-    font-size="170"
     font-family="serif"
     fill="black"
-    style="user-select: none;"
+    style="font-size: {clefFs}px; user-select: none;"
   >𝄞</text>
 
   <!-- Ledger line for notes on a line position outside the 5-line staff -->
