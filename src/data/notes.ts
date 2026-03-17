@@ -18,7 +18,7 @@ export const NOTE_X = 280; // x position for single note display
 // Staff lines: F5=40, D5=60, B4=80, G4=100, E4=120
 // Spaces: E5=50, C5=70, A4=90, F4=110
 // Above staff: A5=20, G5=30
-// Below staff: D4=130, C4=140
+// Below staff: D4=130, C4=140, B3=150, A3=160, G3=170
 export const TREBLE_NOTES: Note[] = [
   { id: 'A5', name: 'A', yPos: 20, octave: 5, midiNote: 81 },
   { id: 'G5', name: 'G', yPos: 30, octave: 5, midiNote: 79 },
@@ -33,6 +33,9 @@ export const TREBLE_NOTES: Note[] = [
   { id: 'E4', name: 'E', yPos: 120, octave: 4, midiNote: 64 },
   { id: 'D4', name: 'D', yPos: 130, octave: 4, midiNote: 62 },
   { id: 'C4', name: 'C', yPos: 140, octave: 4, midiNote: 60 },
+  { id: 'B3', name: 'B', yPos: 150, octave: 3, midiNote: 59 },
+  { id: 'A3', name: 'A', yPos: 160, octave: 3, midiNote: 57 },
+  { id: 'G3', name: 'G', yPos: 170, octave: 3, midiNote: 55 },
 ];
 
 // Sharp notes for songs that use them

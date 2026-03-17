@@ -28,6 +28,8 @@
 
   // Generate all keys for the specified octave range
   const whiteKeyPattern = ["C", "D", "E", "F", "G", "A", "B"];
+  // Only these white keys have a sharp (black key) above them
+  const hasSharp = new Set(["C", "D", "F", "G", "A"]);
   const allKeys = $derived.by(() => {
     const keys: PianoKey[] = [];
     const midiC0 = 12; // MIDI note number for C0
@@ -44,8 +46,8 @@
           midiNote: midiCounter++,
         });
 
-        // Add black key after C, D, E, F, G, A (not after B)
-        if (i < 6) {
+        // Add black key only after C, D, F, G, A (no E# or B#)
+        if (hasSharp.has(whiteLetter)) {
           keys.push({
             id: `${whiteLetter}#${octave}`,
             letter: `${whiteLetter}#`,

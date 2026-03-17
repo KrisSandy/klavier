@@ -57,6 +57,11 @@ class ProgressStore {
     this.persist();
   }
 
+  uncompleteLesson(lessonId: number) {
+    this.data.completedLessons = this.data.completedLessons.filter(id => id !== lessonId);
+    this.persist();
+  }
+
   saveQuizScore(lessonId: number, score: number, total: number, bestTimeMs: number) {
     const existing = this.data.quizScores[lessonId];
     if (!existing || score > existing.score || (score === existing.score && bestTimeMs < existing.bestTimeMs)) {
@@ -102,7 +107,7 @@ class ProgressStore {
   }
 
   get completionPercent(): number {
-    return Math.round((this.data.completedLessons.length / 6) * 100); // 6 lessons in phase 1
+    return Math.round((this.data.completedLessons.length / 18) * 100); // 18 lessons across phases 1-3
   }
 
   reset() {

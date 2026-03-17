@@ -9,6 +9,18 @@
   import Lesson4 from './lessons/Lesson4.svelte';
   import Lesson5 from './lessons/Lesson5.svelte';
   import Lesson6 from './lessons/Lesson6.svelte';
+  import Lesson7 from './lessons/Lesson7.svelte';
+  import Lesson8 from './lessons/Lesson8.svelte';
+  import Lesson9 from './lessons/Lesson9.svelte';
+  import Lesson10 from './lessons/Lesson10.svelte';
+  import Lesson11 from './lessons/Lesson11.svelte';
+  import Lesson12 from './lessons/Lesson12.svelte';
+  import Lesson13 from './lessons/Lesson13.svelte';
+  import Lesson14 from './lessons/Lesson14.svelte';
+  import Lesson15 from './lessons/Lesson15.svelte';
+  import Lesson16 from './lessons/Lesson16.svelte';
+  import Lesson17 from './lessons/Lesson17.svelte';
+  import Lesson18 from './lessons/Lesson18.svelte';
 </script>
 
 <header
@@ -40,6 +52,30 @@
       <Lesson5 />
     {:else if router.lessonId === 6}
       <Lesson6 />
+    {:else if router.lessonId === 7}
+      <Lesson7 />
+    {:else if router.lessonId === 8}
+      <Lesson8 />
+    {:else if router.lessonId === 9}
+      <Lesson9 />
+    {:else if router.lessonId === 10}
+      <Lesson10 />
+    {:else if router.lessonId === 11}
+      <Lesson11 />
+    {:else if router.lessonId === 12}
+      <Lesson12 />
+    {:else if router.lessonId === 13}
+      <Lesson13 />
+    {:else if router.lessonId === 14}
+      <Lesson14 />
+    {:else if router.lessonId === 15}
+      <Lesson15 />
+    {:else if router.lessonId === 16}
+      <Lesson16 />
+    {:else if router.lessonId === 17}
+      <Lesson17 />
+    {:else if router.lessonId === 18}
+      <Lesson18 />
     {:else}
       <div class="max-w-3xl mx-auto px-6 py-12 text-center">
         <h1 class="text-[1.4rem] font-bold text-navy mb-3">Page not found</h1>

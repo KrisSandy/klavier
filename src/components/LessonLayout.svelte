@@ -15,6 +15,10 @@
     progress.completeLesson(lesson.id);
   }
 
+  function markIncomplete() {
+    progress.uncompleteLesson(lesson.id);
+  }
+
   function goNext() {
     if (nextLesson) router.navigate(`/lesson-${nextLesson.id}`);
   }
@@ -69,9 +73,13 @@
           onclick={markComplete}
         >Mark as Complete</button>
       {:else}
-        <span class="text-[0.9rem] text-correct font-medium flex items-center gap-1.5">
+        <button
+          class="text-[0.9rem] text-correct font-medium flex items-center gap-1.5 bg-transparent border border-correct rounded-lg px-4 py-2 cursor-pointer hover:bg-wrong-bg hover:text-wrong hover:border-wrong transition-all"
+          onclick={markIncomplete}
+          title="Click to mark as incomplete"
+        >
           ✓ Completed
-        </span>
+        </button>
       {/if}
       {#if nextLesson}
         <button
