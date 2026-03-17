@@ -53,29 +53,28 @@ All `$state` variables use `let`, not `const`.
 - BEM-adjacent class naming: `.btn-choice`, `.btn-choice.correct`, `.btn-choice.wrong`, `.btn-choice.dimmed`
 - Layout: CSS Grid for the 2×2 answer button grid; flexbox for the card and feedback sections
 - Colour palette:
-  - `#1a1a2e` — dark navy (text, next button)
-  - `#7c6fcd` — purple (hover accent)
+  - `#3d3929` — dark olive/brown (text, next button) — token: `navy`
+  - `#ce7e4f` — terracotta/accent (hover, active borders) — token: `purple`
   - `#28a745` / `#d4edda` — correct (green)
   - `#dc3545` / `#f8d7da` — wrong (red)
-  - `#f0f2f5` — page background
+  - `#faf9f5` — page background
 
 ## SVG Staff Layout (Staff.svelte)
 
-- `viewBox="0 0 500 180"`, `width="100%"`, `max-width: 500px`
+- `viewBox="0 -20 500 200"`, `width="100%"`, `max-width: 500px`
 - Staff lines at y = **40, 60, 80, 100, 120** (20px spacing)
 - Note head centred at **x = 280**
-- Treble clef: `<text x="18" y="155" font-size="170" font-family="serif">𝄞</text>`
-  — baseline at y=155 places the glyph body across the full staff height
+- Treble clef: SVG `<path>` (public-domain Wikipedia glyph) for cross-browser/mobile consistency
 - Note head: `<ellipse rx="10" ry="7" transform="rotate(-20, cx, cy)">` (slight tilt)
 - Stem: `stroke-width="1.5"`, 35px long, direction from `yPos`:
   - `yPos >= 80` → stem **up**, from right side of head `(x+9)`
   - `yPos < 80` → stem **down**, from left side of head `(x-9)`
-- No ledger lines needed — all 9 notes sit within the 5-line staff
+- Ledger lines drawn for notes outside the staff (A5, C4) and intermediate ledger lines for notes in spaces outside the staff (D4, G5)
 
 ## Note Data (notes.ts)
 
 ```
-F5=40  E5=50  D5=60  C5=70  B4=80  A4=90  G4=100  F4=110  E4=120
+A5=20  G5=30  F5=40  E5=50  D5=60  C5=70  B4=80  A4=90  G4=100  F4=110  E4=120  D4=130  C4=140
 ```
 
 - **E and F appear twice** (E4/E5, F4/F5) — letter names are not unique in `NOTES`
