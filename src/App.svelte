@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { NOTES, ALL_LETTERS, type Note } from "./lib/notes";
+  import { NOTES, ALL_LETTERS, CLEF_FONT_SIZE, type Note } from "./lib/notes";
   import Staff from "./lib/Staff.svelte";
   import SongStaff from "./lib/SongStaff.svelte";
 
@@ -81,12 +81,15 @@
     total += 1;
     const isCorrect = letter === currentNote.name;
     if (isCorrect) score += 1;
-    history = [...history, {
-      note: currentNote,
-      selected: letter,
-      correct: isCorrect,
-      timeMs,
-    }];
+    history = [
+      ...history,
+      {
+        note: currentNote,
+        selected: letter,
+        correct: isCorrect,
+        timeMs,
+      },
+    ];
   }
 
   function finishQuiz(): void {
@@ -272,7 +275,9 @@
       <!-- ── SONG: Kushi ───────────────────────────────────────────────────── -->
       <div class="max-w-175">
         <h1 class="text-[1.75rem] font-bold text-navy mb-1">Kushi</h1>
-        <p class="text-[#888] text-[0.9rem] mb-8">Treble clef · Key of F♯ minor</p>
+        <p class="text-[#888] text-[0.9rem] mb-8">
+          Treble clef · Key of F♯ minor
+        </p>
 
         <section class="mb-10">
           <h2
@@ -589,18 +594,53 @@
               width="100%"
               style="max-width:500px;display:block;"
             >
-              <line x1="30" y1="40" x2="480" y2="40" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="60" x2="480" y2="60" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="80" x2="480" y2="80" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="100" x2="480" y2="100" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="120" x2="480" y2="120" stroke="#333" stroke-width="1.5" />
+              <line
+                x1="30"
+                y1="40"
+                x2="480"
+                y2="40"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="60"
+                x2="480"
+                y2="60"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="80"
+                x2="480"
+                y2="80"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="100"
+                x2="480"
+                y2="100"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="120"
+                x2="480"
+                y2="120"
+                stroke="#333"
+                stroke-width="1.5"
+              />
               <text
                 x="42"
                 y="128"
-                font-size="105"
+                font-size={CLEF_FONT_SIZE}
                 font-family="'Noto Music', serif"
-                fill="#333"
-              >&#x1D11E;</text>
+                fill="#333">&#x1D11E;</text
+              >
               <!-- G4 marker on line 2 (y=100) -->
               <ellipse
                 cx="320"
@@ -647,18 +687,53 @@
               width="100%"
               style="max-width:500px;display:block;"
             >
-              <line x1="30" y1="40" x2="408" y2="40" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="60" x2="408" y2="60" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="80" x2="408" y2="80" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="100" x2="408" y2="100" stroke="#333" stroke-width="1.5" />
-              <line x1="30" y1="120" x2="408" y2="120" stroke="#333" stroke-width="1.5" />
+              <line
+                x1="30"
+                y1="40"
+                x2="408"
+                y2="40"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="60"
+                x2="408"
+                y2="60"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="80"
+                x2="408"
+                y2="80"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="100"
+                x2="408"
+                y2="100"
+                stroke="#333"
+                stroke-width="1.5"
+              />
+              <line
+                x1="30"
+                y1="120"
+                x2="408"
+                y2="120"
+                stroke="#333"
+                stroke-width="1.5"
+              />
               <text
                 x="42"
                 y="128"
-                font-size="105"
+                font-size={CLEF_FONT_SIZE}
                 font-family="'Noto Music', serif"
-                fill="#333"
-              >&#x1D11E;</text>
+                fill="#333">&#x1D11E;</text
+              >
               <text
                 x="430"
                 y="44"
@@ -793,12 +868,17 @@
                   <p class="text-base text-[#666]">What note is this?</p>
                   <span
                     class="text-base font-bold tabular-nums text-purple min-w-14 text-right"
-                    aria-label="Elapsed time: {(elapsedMs / 1000).toFixed(1)} seconds"
-                    >{(elapsedMs / 1000).toFixed(1)}s</span
+                    aria-label="Elapsed time: {(elapsedMs / 1000).toFixed(
+                      1,
+                    )} seconds">{(elapsedMs / 1000).toFixed(1)}s</span
                   >
                 </div>
 
-                <div class="grid grid-cols-2 gap-3" role="group" aria-label="Answer choices">
+                <div
+                  class="grid grid-cols-2 gap-3"
+                  role="group"
+                  aria-label="Answer choices"
+                >
                   {#each choices as letter}
                     <button
                       class={buttonClass(letter)}
@@ -812,7 +892,10 @@
                 </div>
 
                 <!-- Reserve space to prevent layout shift on answer reveal -->
-                <div class="flex flex-col items-center gap-3 min-h-[4.5rem]" aria-live="polite">
+                <div
+                  class="flex flex-col items-center gap-3 min-h-[4.5rem]"
+                  aria-live="polite"
+                >
                   {#if selected !== null}
                     {#if selected === currentNote.name}
                       <p class="text-[1.1rem] font-bold text-correct">

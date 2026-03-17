@@ -26,3 +26,6 @@ export const NOTES: Note[] = [
 
 // All 7 unique letter names used for generating answer choices
 export const ALL_LETTERS: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+// Treble clef rendering constants (Unicode 𝄞 via Noto Music web font)
+export const CLEF_FONT_SIZE = 100;
