@@ -40,14 +40,6 @@
   let currentNote2 = $state<Note | null>(null);
   let currentChord = $state<'major' | 'minor' | null>(null);
   let choices = $state<string[]>([]);
-
-  // Initialize first question
-  $effect(() => {
-    if (questionIndex === 0 && !finished) {
-      generateQuestion();
-    }
-  });
-
   function shuffle<T>(arr: T[]): T[] {
     const copy = [...arr];
     for (let i = copy.length - 1; i > 0; i--) {
@@ -208,6 +200,9 @@
     finished = false;
     generateQuestion();
   }
+
+  // Initialize first question
+  generateQuestion();
 
   function getButtonClass(choice: string): string {
     if (selected === null) return 'default';
