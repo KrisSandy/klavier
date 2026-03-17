@@ -15,17 +15,16 @@
     })
   );
 
-  const svgWidth = $derived(
-    Math.max(320, NOTE_START_X + notes.length * NOTE_SPACING + 20)
-  );
+  // Always use a consistent viewBox width so all lines render at the same scale
+  const contentWidth = $derived(NOTE_START_X + notes.length * NOTE_SPACING + 20);
+  const svgWidth = $derived(Math.max(540, contentWidth));
 </script>
 
 <div style="overflow-x: auto; max-width: 100%;">
   <svg
     viewBox="0 -15 {svgWidth} 195"
     xmlns="http://www.w3.org/2000/svg"
-    width={svgWidth}
-    style="display: block; min-width: {svgWidth}px; max-width: 100%;"
+    style="display: block; width: 100%; height: auto; max-height: 140px;"
   >
     <!-- Staff lines -->
     {#each STAFF_LINES as lineY}
