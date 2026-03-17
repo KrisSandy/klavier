@@ -1,5 +1,6 @@
 <script lang="ts">
   import { router } from './router.svelte';
+  import { sidebar } from './stores/sidebar.svelte';
   import Sidebar from './components/Sidebar.svelte';
   import Home from './pages/Home.svelte';
   import Practice from './pages/Practice.svelte';
@@ -24,15 +25,27 @@
 </script>
 
 <header
-  class="sticky top-0 z-[100] bg-[#faf9f5] border-b border-[#dad9d4] px-8 py-[0.85rem] flex items-center shrink-0"
+  class="sticky top-0 z-[100] bg-[#faf9f5] border-b border-[#dad9d4] px-8 py-[0.85rem] flex items-center shrink-0 gap-3"
 >
+  <!-- Hamburger (mobile only) -->
+  <button
+    class="w-8 h-8 items-center justify-center rounded-md bg-transparent border-none cursor-pointer text-navy hover:bg-[#f0ede6] transition-colors hidden max-sm:flex"
+    onclick={() => sidebar.toggle()}
+    aria-label="Open navigation"
+  >
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="5" x2="17" y2="5" />
+      <line x1="3" y1="10" x2="17" y2="10" />
+      <line x1="3" y1="15" x2="17" y2="15" />
+    </svg>
+  </button>
   <a
     class="text-[1.2rem] font-extrabold text-navy no-underline tracking-[-.02em] hover:text-purple transition-colors"
     href="#/"
   >Klavier</a>
 </header>
 
-<div class="flex-1 flex min-h-0 max-sm:flex-col">
+<div class="flex-1 flex min-h-0">
   <Sidebar />
 
   <main class="flex-1 overflow-y-auto">

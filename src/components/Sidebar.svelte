@@ -2,25 +2,69 @@
   import { MODULES, LESSONS } from '../data/lessons';
   import { progress } from '../stores/progress.svelte';
   import { router } from '../router.svelte';
+  import { sidebar } from '../stores/sidebar.svelte';
 
   function navigateTo(path: string) {
     router.navigate(path);
+    sidebar.close();
   }
 </script>
 
-<aside class="sticky top-(--header-height) w-60 h-[calc(100vh-var(--header-height))] overflow-y-auto bg-[#faf9f5] border-r border-[#dad9d4] shrink-0 flex flex-col max-sm:static max-sm:w-full max-sm:h-auto max-sm:border-r-0 max-sm:border-b">
-  <nav class="py-6 flex flex-col max-sm:flex-row max-sm:p-0 max-sm:overflow-x-auto">
-    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-[#b4b2a7] px-5 mb-2 max-sm:hidden">Course</p>
+<!-- Backdrop (mobile only) -->
+{#if sidebar.open}
+  <div
+    class="fixed inset-0 bg-black/40 z-[200] sm:hidden"
+    style="transition: opacity 0.2s ease;"
+    onclick={() => sidebar.close()}
+    onkeydown={(e) => { if (e.key === 'Escape') sidebar.close(); }}
+    role="button"
+    tabindex="-1"
+    aria-label="Close navigation"
+  ></div>
+{/if}
+
+<!-- Sidebar -->
+<aside
+  class="
+    sm:sticky sm:top-(--header-height) sm:w-60 sm:h-[calc(100vh-var(--header-height))]
+    sm:overflow-y-auto sm:bg-[#faf9f5] sm:border-r sm:border-[#dad9d4] sm:shrink-0 sm:flex sm:flex-col
+    max-sm:fixed max-sm:top-0 max-sm:left-0 max-sm:bottom-0 max-sm:w-72 max-sm:z-[210]
+    max-sm:bg-[#faf9f5] max-sm:shadow-2xl max-sm:overflow-y-auto max-sm:flex max-sm:flex-col
+  "
+  style="
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    {typeof window !== 'undefined' ? '' : ''}
+  "
+  class:max-sm:-translate-x-full={!sidebar.open}
+  class:max-sm:translate-x-0={sidebar.open}
+>
+  <!-- Mobile drawer header -->
+  <div class="flex items-center justify-between px-5 py-4 border-b border-[#dad9d4] sm:hidden">
+    <span class="text-[1rem] font-extrabold text-navy tracking-[-.02em]">Klavier</span>
+    <button
+      class="w-8 h-8 flex items-center justify-center rounded-md bg-transparent border-none cursor-pointer text-[#6b6455] hover:bg-[#f0ede6] transition-colors"
+      onclick={() => sidebar.close()}
+      aria-label="Close navigation"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="4" y1="4" x2="14" y2="14" />
+        <line x1="14" y1="4" x2="4" y2="14" />
+      </svg>
+    </button>
+  </div>
+
+  <nav class="py-6 flex flex-col flex-1">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-[#b4b2a7] px-5 mb-2">Course</p>
 
     {#each MODULES as mod}
-      <p class="text-[0.75rem] font-semibold uppercase tracking-wider text-navy px-5 mt-4 mb-1 max-sm:hidden">
+      <p class="text-[0.75rem] font-semibold uppercase tracking-wider text-navy px-5 mt-4 mb-1">
         {mod.name}
       </p>
       {#each LESSONS.filter(l => l.module === mod.id) as lesson}
         {@const isActive = router.lessonId === lesson.id}
         {@const isCompleted = progress.isLessonCompleted(lesson.id)}
         <button
-          class="flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy border-none max-sm:whitespace-nowrap max-sm:px-4"
+          class="flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy border-none"
           style="border-left: 3px solid {isActive ? '#ce7e4f' : 'transparent'}; color: {isActive ? '#3d3929' : '#6b6455'}; font-weight: {isActive ? '600' : '400'}; background: {isActive ? '#f5f0e8' : 'transparent'};"
           onclick={() => navigateTo(`/lesson-${lesson.id}`)}
         >
@@ -37,11 +81,11 @@
     {/each}
 
     <!-- Divider -->
-    <div class="border-t border-[#dad9d4] my-4 mx-5 max-sm:hidden"></div>
+    <div class="border-t border-[#dad9d4] my-4 mx-5"></div>
 
     <!-- Practice link -->
     <button
-      class="flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy border-none max-sm:whitespace-nowrap max-sm:px-4"
+      class="flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy border-none"
       style="border-left: 3px solid {router.isPractice ? '#ce7e4f' : 'transparent'}; color: {router.isPractice ? '#3d3929' : '#6b6455'}; font-weight: {router.isPractice ? '600' : '400'};"
       onclick={() => navigateTo('/practice')}
     >

@@ -57,36 +57,26 @@
   {@render children()}
 
   <!-- Bottom nav -->
-  <div class="flex items-center justify-between mt-12 pt-6 border-t border-[#e8e6e0]">
-    <div>
-      {#if prevLesson}
-        <button
-          class="text-[0.9rem] text-[#6b6455] hover:text-navy cursor-pointer bg-transparent border-none transition-colors"
-          onclick={goPrev}
-        >← Lesson {prevLesson.id}: {prevLesson.title}</button>
-      {/if}
-    </div>
-    <div class="flex items-center gap-4">
-      {#if !isCompleted}
-        <button
-          class="bg-navy text-white px-5 py-2.5 rounded-lg text-[0.95rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
-          onclick={markComplete}
-        >Mark as Complete</button>
-      {:else}
-        <button
-          class="text-[0.9rem] text-correct font-medium flex items-center gap-1.5 bg-transparent border border-correct rounded-lg px-4 py-2 cursor-pointer hover:bg-wrong-bg hover:text-wrong hover:border-wrong transition-all"
-          onclick={markIncomplete}
-          title="Click to mark as incomplete"
-        >
-          ✓ Completed
-        </button>
-      {/if}
-      {#if nextLesson}
-        <button
-          class="bg-purple text-white px-5 py-2.5 rounded-lg text-[0.95rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
-          onclick={goNext}
-        >Next: {nextLesson.title} →</button>
-      {/if}
-    </div>
+  <div class="mt-12 pt-6 border-t border-[#e8e6e0] flex items-center justify-center gap-3">
+    {#if !isCompleted}
+      <button
+        class="bg-navy text-white px-5 py-2.5 rounded-lg text-[0.9rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
+        onclick={markComplete}
+      >Mark as Complete</button>
+    {:else}
+      <button
+        class="text-[0.9rem] text-correct font-medium flex items-center gap-1.5 bg-transparent border border-correct rounded-lg px-4 py-2 cursor-pointer hover:bg-wrong-bg hover:text-wrong hover:border-wrong transition-all"
+        onclick={markIncomplete}
+        title="Click to mark as incomplete"
+      >
+        ✓ Completed
+      </button>
+    {/if}
+    {#if nextLesson}
+      <button
+        class="bg-purple text-white px-5 py-2.5 rounded-lg text-[0.9rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
+        onclick={goNext}
+      >Next Lesson →</button>
+    {/if}
   </div>
 </div>
