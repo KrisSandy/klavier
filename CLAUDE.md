@@ -61,10 +61,10 @@ All `$state` variables use `let`, not `const`.
 
 ## SVG Staff Layout (Staff.svelte)
 
-- `viewBox="0 -20 500 200"`, `width="100%"`, `max-width: 500px`
+- `viewBox="0 -15 500 200"`, `width="100%"`, `max-width: 500px`
 - Staff lines at y = **40, 60, 80, 100, 120** (20px spacing)
 - Note head centred at **x = 280**
-- Treble clef: SVG `<path>` (public-domain Wikipedia glyph) for cross-browser/mobile consistency
+- Treble clef: Unicode `𝄞` (U+1D11E) via **Noto Music** web font — `<text x="42" y="128" font-size="105">` — G-circle wraps G4 line (y=100)
 - Note head: `<ellipse rx="10" ry="7" transform="rotate(-20, cx, cy)">` (slight tilt)
 - Stem: `stroke-width="1.5"`, 35px long, direction from `yPos`:
   - `yPos >= 80` → stem **up**, from right side of head `(x+9)`
