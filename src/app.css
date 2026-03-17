@@ -14,93 +14,17 @@
 
 @layer base {
   :root {
-    /* Header height = py-[0.85rem]*2 + line-height (~1.5 * 1.2rem) + 1px border */
     --header-height: calc(0.85rem * 2 + 1.8rem + 1px);
   }
   body {
     @apply bg-[#faf9f5] min-h-screen flex flex-col font-sans;
   }
-}
-
-@layer components {
-  /* Nav lesson buttons: border-left-only trick + responsive border-bottom */
-  .nav-lesson {
-    @apply flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-[#6b6455] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy;
-    border: none;
-    border-left: 3px solid transparent;
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
-  @media (max-width: 640px) {
-    .nav-lesson {
-      @apply flex-1 justify-center text-center py-3 px-4 whitespace-nowrap;
-      border-left: none;
-      border-bottom: 3px solid transparent;
-    }
-  }
-
-  /* Sub-lesson with ::before arrow + active state */
-  .nav-sublesson {
-    @apply flex items-center gap-[0.6rem] py-[0.45rem] pr-5 pl-12 bg-transparent cursor-pointer text-[0.85rem] text-[#9a9287] text-left transition-colors duration-150 w-full hover:bg-[#f5f0e8] hover:text-navy;
-    border: none;
-    border-left: 3px solid transparent;
-  }
-  .nav-sublesson::before {
-    content: '↳';
-    font-size: 0.75rem;
-    opacity: 0.5;
-    margin-left: -1.2rem;
-  }
-  .nav-lesson.active {
-    @apply bg-[#ede8de] text-navy font-bold;
-    border-left-color: #ce7e4f;
-  }
-  @media (max-width: 640px) {
-    .nav-lesson.active {
-      border-left-color: transparent;
-      border-bottom-color: #ce7e4f;
-    }
-  }
-
-  .nav-sublesson.active {
-    @apply bg-[#ede8de] text-navy font-bold;
-    border-left-color: #ce7e4f;
-  }
-  @media (max-width: 640px) {
-    .nav-sublesson {
-      @apply shrink-0 px-4 py-3 text-center whitespace-nowrap;
-      width: auto;
-      border-left: none;
-      border-bottom: 3px solid transparent;
-    }
-    .nav-sublesson::before {
-      display: none;
-    }
-    .nav-sublesson.active {
-      border-left-color: transparent;
-      border-bottom-color: #ce7e4f;
-    }
-  }
-
-  /* Answer buttons: multi-state (correct / wrong / dimmed) */
-  .btn-choice {
-    @apply py-[0.85rem] px-4 text-2xl font-bold rounded-[10px] bg-[#f5f0e8] cursor-pointer transition-all duration-150 text-navy;
-    border: 2px solid #dad9d4;
-  }
-  .btn-choice:not(:disabled):hover {
-    @apply bg-[#f5e9de] -translate-y-px;
-    border-color: #ce7e4f;
-  }
-  .btn-choice.correct {
-    @apply bg-correct-bg text-correct-text;
-    border-color: #28a745;
-  }
-  .btn-choice.wrong {
-    @apply bg-wrong-bg text-wrong-text;
-    border-color: #dc3545;
-  }
-  .btn-choice.dimmed {
-    @apply opacity-40;
-  }
-  .btn-choice:disabled {
-    @apply cursor-default;
+  /* Remove default button styling */
+  button {
+    font-family: inherit;
   }
 }
