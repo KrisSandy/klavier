@@ -20,6 +20,12 @@ export interface ProgressData {
 
 const STORAGE_KEY = 'klavier-progress';
 const CONSENT_KEY = 'klavier-consent';
+const SCHEMA_VERSION = 1;
+
+interface StoredData {
+  _schemaVersion: number;
+  data: ProgressData;
+}
 
 const defaultProgress: ProgressData = {
   completedLessons: [],
@@ -41,11 +47,50 @@ function hasConsent(): boolean {
   }
 }
 
+/**
+ * Migrate stored data from one schema version to the next.
+ * Add new cases here when you change the ProgressData shape.
+ *
+ * Example for a future v2 migration:
+ *   case 1: stored.data.newField = defaultValue; stored._schemaVersion = 2;
+ */
+function migrate(stored: StoredData): StoredData {
+  // Currently on schema v1, no migrations needed yet.
+  // When adding v2, add: while (stored._schemaVersion < SCHEMA_VERSION) { switch... }
+  return stored;
+}
+
 function load(): ProgressData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...defaultProgress };
-    return { ...defaultProgress, ...JSON.parse(raw) };
+
+    const parsed = JSON.parse(raw);
+
+    // Handle legacy data (pre-schema-versioning): no _schemaVersion field
+    if (parsed._schemaVersion === undefined) {
+      // Old format stored ProgressData directly — wrap it
+      const stored: StoredData = {
+        _schemaVersion: SCHEMA_VERSION,
+        data: { ...defaultProgress, ...parsed },
+      };
+      // Re-save in new format if we have consent
+      if (hasConsent()) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      }
+      return stored.data;
+    }
+
+    // Versioned format — run migrations if needed
+    let stored = parsed as StoredData;
+    if (stored._schemaVersion < SCHEMA_VERSION) {
+      stored = migrate(stored);
+      if (hasConsent()) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      }
+    }
+
+    return { ...defaultProgress, ...stored.data };
   } catch {
     return { ...defaultProgress };
   }
@@ -54,7 +99,8 @@ function load(): ProgressData {
 function save(data: ProgressData): void {
   // Only persist to localStorage if user has granted consent
   if (hasConsent()) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const stored: StoredData = { _schemaVersion: SCHEMA_VERSION, data };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
   }
 }
 

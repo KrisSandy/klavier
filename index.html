@@ -4,6 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Klavier - Learn Piano</title>
+    <meta name="description" content="A free, browser-based piano learning app. 18 interactive lessons, quizzes, a virtual keyboard, and song playback — all running locally in your browser with no account required." />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Klavier - Learn Piano" />
+    <meta property="og:description" content="A free, browser-based piano learning app with 18 interactive lessons, quizzes, and a virtual keyboard." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Security: Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data:;
+      connect-src 'self';
+      media-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+    " />
+
+    <!-- Security: prevent MIME sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Music&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
