@@ -4,33 +4,44 @@
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let reverbAmount: number = 0.15;
+let audioAvailable: boolean = true;
 
-function getContext(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new AudioContext();
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.6;
+function getContext(): AudioContext | null {
+  if (!audioAvailable) return null;
 
-    // Compressor to prevent clipping
-    const compressor = audioCtx.createDynamicsCompressor();
-    compressor.threshold.value = -12;
-    compressor.knee.value = 10;
-    compressor.ratio.value = 4;
-    compressor.attack.value = 0.003;
-    compressor.release.value = 0.15;
+  try {
+    if (!audioCtx) {
+      audioCtx = new AudioContext();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.6;
 
-    masterGain.connect(compressor);
-    compressor.connect(audioCtx.destination);
+      // Compressor to prevent clipping
+      const compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -12;
+      compressor.knee.value = 10;
+      compressor.ratio.value = 4;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.15;
+
+      masterGain.connect(compressor);
+      compressor.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {
+        // AudioContext.resume() requires a user gesture — silently ignore
+      });
+    }
+    return audioCtx;
+  } catch (e) {
+    console.warn('[Klavier] Web Audio API not available:', e);
+    audioAvailable = false;
+    return null;
   }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  return audioCtx;
 }
 
-function getMaster(): GainNode {
+function getMaster(): GainNode | null {
   getContext();
-  return masterGain!;
+  return masterGain;
 }
 
 // Convert MIDI note number to frequency
@@ -55,6 +66,7 @@ const HARMONIC_AMPS = [
 export function playNote(midiNote: number, duration: number = 0.8, velocity: number = 0.7): void {
   const ctx = getContext();
   const master = getMaster();
+  if (!ctx || !master) return;
   const freq = midiToFreq(midiNote);
   const now = ctx.currentTime;
 
@@ -202,6 +214,7 @@ export function playSequence(
 // Metronome click
 export function playClick(accent: boolean = false): void {
   const ctx = getContext();
+  if (!ctx) return;
   const now = ctx.currentTime;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();

@@ -12,22 +12,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
 
-    <!-- Security: Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self';
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' data:;
-      connect-src 'self';
-      media-src 'self';
-      object-src 'none';
-      base-uri 'self';
-      form-action 'self';
-      frame-ancestors 'none';
-    " />
-
-    <!-- Security: prevent MIME sniffing -->
+    <!-- Security headers (CSP, X-Frame-Options, etc.) are set server-side
+         via public/_headers (Netlify/Cloudflare) or vercel.json (Vercel).
+         A meta CSP tag here would conflict with Vite dev/preview modes and
+         duplicate the server-side policy. -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -103,13 +103,31 @@
     {:else if router.lessonId === 18}
       <Lesson18 />
     {:else}
-      <div class="max-w-3xl mx-auto px-6 py-12 text-center">
-        <h1 class="text-[1.4rem] font-bold text-navy mb-3">Page not found</h1>
-        <p class="text-[#6b6455] mb-4">The page you're looking for doesn't exist.</p>
-        <button
-          class="bg-navy text-white px-6 py-2.5 rounded-lg text-[0.95rem] font-medium cursor-pointer border-none hover:opacity-90"
-          onclick={() => router.navigate('/')}
-        >Go Home</button>
+      <div class="max-w-3xl mx-auto px-6 py-16 text-center">
+        <div class="text-[3rem] mb-4">🎹</div>
+        <h1 class="text-[1.6rem] font-bold text-navy mb-3">Page not found</h1>
+        <p class="text-[1rem] text-[#6b6455] mb-2">
+          The page <code class="text-[0.85rem] bg-[#f0ede6] px-2 py-0.5 rounded text-navy">#{router.current}</code> doesn't exist.
+        </p>
+        <p class="text-[0.9rem] text-[#b4b2a7] mb-8">It may have been moved or the link might be incorrect.</p>
+        <div class="flex gap-3 justify-center mb-10">
+          <button
+            class="bg-navy text-white px-6 py-2.5 rounded-lg text-[0.95rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
+            onclick={() => router.navigate('/')}
+          >Go Home</button>
+          <button
+            class="bg-white text-navy px-6 py-2.5 rounded-lg text-[0.95rem] font-medium cursor-pointer border-2 border-[#dad9d4] hover:border-purple transition-colors"
+            onclick={() => router.navigate('/practice')}
+          >Free Practice</button>
+        </div>
+        <div class="border-t border-[#e8e6e0] pt-6">
+          <p class="text-[0.8rem] text-[#b4b2a7] mb-3">Or jump to a section:</p>
+          <div class="flex gap-2 justify-center flex-wrap">
+            <button class="text-[0.8rem] text-[#6b6455] bg-[#f0ede6] border-none rounded-md px-3 py-1.5 cursor-pointer hover:bg-[#e8e3d9] transition-colors" onclick={() => router.navigate('/lesson-1')}>Lesson 1</button>
+            <button class="text-[0.8rem] text-[#6b6455] bg-[#f0ede6] border-none rounded-md px-3 py-1.5 cursor-pointer hover:bg-[#e8e3d9] transition-colors" onclick={() => router.navigate('/songs')}>Songs</button>
+            <button class="text-[0.8rem] text-[#6b6455] bg-[#f0ede6] border-none rounded-md px-3 py-1.5 cursor-pointer hover:bg-[#e8e3d9] transition-colors" onclick={() => router.navigate('/settings')}>Settings</button>
+          </div>
+        </div>
       </div>
     {/if}
   </main>
