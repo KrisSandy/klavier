@@ -35,6 +35,15 @@ class Router {
     const match = this.current.match(/^\/?lesson-(\d+)$/);
     return match ? parseInt(match[1]) : null;
   }
+
+  get isSongs() {
+    return this.current === '/songs' || this.current.startsWith('/songs/');
+  }
+
+  get songSlug(): string | null {
+    const match = this.current.match(/^\/?songs\/(.+)$/);
+    return match ? match[1] : null;
+  }
 }
 
 export const router = new Router();

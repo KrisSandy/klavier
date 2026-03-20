@@ -46,12 +46,17 @@
       {@const isHighlighted = note.index === highlightIndex}
       {@const fillColor = isHighlighted ? '#ce7e4f' : 'black'}
 
-      <!-- Ledger lines -->
-      {#if note.yPos <= 20}
-        <line x1={note.x - 15} y1={20} x2={note.x + 15} y2={20} stroke="black" stroke-width="1.5" />
+      <!-- Ledger lines above staff -->
+      {#if note.yPos < 40}
+        {#each Array.from({ length: Math.ceil((40 - note.yPos) / 20) }, (_, i) => 40 - (i + 1) * 20).filter(y => y % 20 === 0) as ledgerY}
+          <line x1={note.x - 15} y1={ledgerY} x2={note.x + 15} y2={ledgerY} stroke="black" stroke-width="1.5" />
+        {/each}
       {/if}
-      {#if note.yPos >= 140}
-        <line x1={note.x - 15} y1={140} x2={note.x + 15} y2={140} stroke="black" stroke-width="1.5" />
+      <!-- Ledger lines below staff -->
+      {#if note.yPos > 120}
+        {#each Array.from({ length: Math.ceil((note.yPos - 120) / 20) }, (_, i) => 140 + i * 20).filter(y => y % 20 === 0) as ledgerY}
+          <line x1={note.x - 15} y1={ledgerY} x2={note.x + 15} y2={ledgerY} stroke="black" stroke-width="1.5" />
+        {/each}
       {/if}
 
       <!-- Sharp accidental -->

@@ -92,5 +92,15 @@
       <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">🎹</span>
       <span>Practice</span>
     </button>
+
+    <!-- Songs link -->
+    <button
+      class="flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy border-none"
+      style="border-left: 3px solid {router.isSongs ? '#ce7e4f' : 'transparent'}; color: {router.isSongs ? '#3d3929' : '#6b6455'}; font-weight: {router.isSongs ? '600' : '400'};"
+      onclick={() => navigateTo('/songs')}
+    >
+      <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">🎵</span>
+      <span>Songs</span>
+    </button>
   </nav>
 </aside>

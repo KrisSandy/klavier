@@ -65,17 +65,15 @@
   }
 
   function generateDurationQuestions(): QuizQuestion[] {
-    const qs: QuizQuestion[] = [];
-    for (let i = 0; i < 8; i++) {
-      const dt = durationTypes[Math.floor(Math.random() * 3)];
-      qs.push({
-        id: `q${i}-${dt.shape}`,
-        prompt: `How many beats does a ${dt.name.toLowerCase()} get in 4/4 time?`,
-        correctAnswer: dt.beats,
-        choices: shuffle(['1', '2', '3', '4']),
-      });
-    }
-    return qs;
+    // All 3 types once, then 2 random extras = 5 questions
+    const base = shuffle(durationTypes);
+    const extras = shuffle(durationTypes).slice(0, 2);
+    return [...base, ...extras].map((dt, i) => ({
+      id: `q${i}-${dt.shape}`,
+      prompt: `How many beats does a ${dt.name.toLowerCase()} get in 4/4 time?`,
+      correctAnswer: dt.beats,
+      choices: shuffle(['1', '2', '3', '4']),
+    }));
   }
 
   let quizQuestions = $state(generateDurationQuestions());
@@ -260,9 +258,11 @@
     <!-- Melody display -->
     {#if odeToJoy}
       {#each odeToJoy.lines as line, lineIdx}
+        {@const lineStart = odeToJoy.lines.slice(0, lineIdx).reduce((sum, l) => sum + l.length, 0)}
+        {@const localIndex = highlightIndex >= lineStart && highlightIndex < lineStart + line.length ? highlightIndex - lineStart : -1}
         <div class="mb-6">
           <p class="text-sm text-[#999] mb-2">Line {lineIdx + 1}</p>
-          <SongStaff notes={line} {highlightIndex} />
+          <SongStaff notes={line} highlightIndex={localIndex} />
         </div>
       {/each}
 
@@ -297,7 +297,13 @@
         </p>
       </div>
 
-      <VirtualKeyboard startOctave={3} endOctave={4} showLabels={true} />
+      <VirtualKeyboard
+        startOctave={3}
+        endOctave={4}
+        showLabels={true}
+        highlightKeys={[...new Set(odeToJoy.lines.flat())]}
+        onNotePlay={(note, midi) => { playNote(midi); }}
+      />
     {/if}
   </section>
 

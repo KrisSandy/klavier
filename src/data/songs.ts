@@ -1,8 +1,11 @@
+export type SongDifficulty = 'beginner' | 'intermediate' | 'advanced';
+
 export interface Song {
   id: string;
   title: string;
   composer?: string;
-  lessonId: number;    // which lesson introduces this song
+  lessonId?: number;    // which lesson introduces this song (optional for standalone songs)
+  difficulty?: SongDifficulty;
   timeSignature: [number, number]; // e.g. [4, 4]
   keySignature: string; // e.g. "C major", "G major"
   bpm: number;         // suggested tempo
@@ -29,6 +32,7 @@ export const SONGS: Song[] = [
     id: 'kushi',
     title: 'Kushi Theme',
     lessonId: 5,
+    difficulty: 'beginner',
     timeSignature: [4, 4],
     keySignature: 'F# minor',
     bpm: 80,
@@ -199,4 +203,13 @@ export function getSongById(id: string): Song | undefined {
 
 export function getSongsByLesson(lessonId: number): Song[] {
   return SONGS.filter(s => s.lessonId === lessonId);
+}
+
+// Songs that have a difficulty rating (shown in the Songs section)
+export function getSongLibrary(): Song[] {
+  return SONGS.filter(s => s.difficulty !== undefined);
+}
+
+export function getSongsByDifficulty(difficulty: SongDifficulty): Song[] {
+  return SONGS.filter(s => s.difficulty === difficulty);
 }

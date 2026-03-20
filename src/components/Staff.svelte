@@ -29,12 +29,17 @@
     fill="black"
   >&#x1D11E;</text>
 
-  <!-- Ledger lines -->
-  {#if yPos <= 20}
-    <line x1={NOTE_X - 15} y1={20} x2={NOTE_X + 15} y2={20} stroke="black" stroke-width="1.5" />
+  <!-- Ledger lines above staff (y < 40, lines at every 20px: 20, 0, -20...) -->
+  {#if yPos < 40}
+    {#each Array.from({ length: Math.ceil((40 - yPos) / 20) }, (_, i) => 40 - (i + 1) * 20).filter(y => y % 20 === 0) as ledgerY}
+      <line x1={NOTE_X - 15} y1={ledgerY} x2={NOTE_X + 15} y2={ledgerY} stroke="black" stroke-width="1.5" />
+    {/each}
   {/if}
-  {#if yPos >= 140}
-    <line x1={NOTE_X - 15} y1={140} x2={NOTE_X + 15} y2={140} stroke="black" stroke-width="1.5" />
+  <!-- Ledger lines below staff (y > 120, lines at every 20px: 140, 160, 180...) -->
+  {#if yPos > 120}
+    {#each Array.from({ length: Math.ceil((yPos - 120) / 20) }, (_, i) => 140 + i * 20).filter(y => y % 20 === 0) as ledgerY}
+      <line x1={NOTE_X - 15} y1={ledgerY} x2={NOTE_X + 15} y2={ledgerY} stroke="black" stroke-width="1.5" />
+    {/each}
   {/if}
 
   <!-- Note head -->

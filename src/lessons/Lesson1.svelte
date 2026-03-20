@@ -143,6 +143,7 @@
               startOctave={3}
               endOctave={4}
               highlightKeys={[quizData.noteMap[quizData.questions[questionIndex]?.id] || 'C4']}
+              showLabels={false}
             />
           </div>
         {/snippet}

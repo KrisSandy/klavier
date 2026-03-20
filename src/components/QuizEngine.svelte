@@ -66,6 +66,9 @@
         timeMs,
       },
     ];
+
+    // Auto-advance after a short delay
+    setTimeout(nextQuestion, 600);
   }
 
   function nextQuestion() {
@@ -156,17 +159,6 @@
       {/each}
     </div>
 
-    <!-- Next button -->
-    {#if selected !== null}
-      <div style="display: flex; justify-content: center;">
-        <button
-          onclick={nextQuestion}
-          class="bg-navy text-white px-6 py-3 rounded-lg border-none text-base font-semibold cursor-pointer transition-all hover:opacity-90"
-        >
-          Next
-        </button>
-      </div>
-    {/if}
   </div>
 {:else}
   <!-- Summary card -->

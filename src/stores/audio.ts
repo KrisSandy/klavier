@@ -1,15 +1,26 @@
 // Web Audio API piano engine
-// Generates piano-like tones using oscillators + envelope
+// Improved piano synthesis with percussive attack, rich harmonics, and natural decay
 
 let audioCtx: AudioContext | null = null;
-let reverbDryGain: GainNode | null = null;
-let reverbWetGain: GainNode | null = null;
-let reverbAmount: number = 0.2; // 80/20 mix default
+let masterGain: GainNode | null = null;
+let reverbAmount: number = 0.15;
 
 function getContext(): AudioContext {
   if (!audioCtx) {
     audioCtx = new AudioContext();
-    initReverb();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.6;
+
+    // Compressor to prevent clipping
+    const compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -12;
+    compressor.knee.value = 10;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.15;
+
+    masterGain.connect(compressor);
+    compressor.connect(audioCtx.destination);
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
@@ -17,71 +28,9 @@ function getContext(): AudioContext {
   return audioCtx;
 }
 
-// Initialize reverb network (feedback delay network)
-function initReverb(): void {
-  if (!audioCtx) return;
-
-  // Create reverb processing chain
-  const dryGain = audioCtx.createGain();
-  const wetGain = audioCtx.createGain();
-
-  // Feedback delay network for reverb
-  const delay1 = audioCtx.createDelay();
-  const delay2 = audioCtx.createDelay();
-  const delay3 = audioCtx.createDelay();
-  const feedback1 = audioCtx.createGain();
-  const feedback2 = audioCtx.createGain();
-  const feedback3 = audioCtx.createGain();
-
-  // Set delay times (in seconds) - slightly different for density
-  delay1.delayTime.value = 0.05;
-  delay2.delayTime.value = 0.07;
-  delay3.delayTime.value = 0.09;
-
-  // Feedback amounts (decay)
-  feedback1.gain.value = 0.4;
-  feedback2.gain.value = 0.35;
-  feedback3.gain.value = 0.3;
-
-  // Connect feedback loops
-  delay1.connect(feedback1);
-  feedback1.connect(delay1);
-  feedback1.connect(wetGain);
-
-  delay2.connect(feedback2);
-  feedback2.connect(delay2);
-  feedback2.connect(wetGain);
-
-  delay3.connect(feedback3);
-  feedback3.connect(delay3);
-  feedback3.connect(wetGain);
-
-  // Dry path
-  dryGain.connect(audioCtx.destination);
-
-  // Wet path through reverb and compressor
-  const compressor = audioCtx.createDynamicsCompressor();
-  compressor.threshold.value = -30;
-  compressor.knee.value = 40;
-  compressor.ratio.value = 4;
-  compressor.attack.value = 0.003;
-  compressor.release.value = 0.25;
-
-  wetGain.connect(compressor);
-  compressor.connect(audioCtx.destination);
-
-  // Route audio: split to dry and wet, wet goes through delays
-  const mainGain = audioCtx.createGain();
-  mainGain.connect(dryGain);
-  mainGain.connect(delay1);
-  mainGain.connect(delay2);
-  mainGain.connect(delay3);
-
-  reverbDryGain = dryGain;
-  reverbWetGain = wetGain;
-
-  // Set initial 80/20 mix
-  updateReverbMix();
+function getMaster(): GainNode {
+  getContext();
+  return masterGain!;
 }
 
 // Convert MIDI note number to frequency
@@ -89,77 +38,131 @@ function midiToFreq(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
-// Update reverb dry/wet mix based on reverbAmount (0.0 to 1.0)
-function updateReverbMix(): void {
-  if (!reverbDryGain || !reverbWetGain) return;
-  const dryLevel = 1 - reverbAmount;
-  const wetLevel = reverbAmount;
-  reverbDryGain.gain.value = dryLevel;
-  reverbWetGain.gain.value = wetLevel;
-}
+// Piano harmonic amplitudes (relative to fundamental)
+// Based on measured piano spectra — higher harmonics decay faster
+const HARMONIC_AMPS = [
+  1.0,    // fundamental
+  0.5,    // 2nd harmonic
+  0.25,   // 3rd
+  0.12,   // 4th
+  0.08,   // 5th
+  0.04,   // 6th
+  0.02,   // 7th
+  0.01,   // 8th
+];
 
 // Play a piano-like tone
-export function playNote(midiNote: number, duration: number = 0.5, velocity: number = 0.7): void {
+export function playNote(midiNote: number, duration: number = 0.8, velocity: number = 0.7): void {
   const ctx = getContext();
+  const master = getMaster();
   const freq = midiToFreq(midiNote);
   const now = ctx.currentTime;
 
-  // Random detune (±5 cents) for less synthetic sound
-  const detuneAmount = (Math.random() - 0.5) * 10; // ±5 cents
+  // Higher notes decay faster (like a real piano)
+  const pitchFactor = Math.max(0.3, 1 - (midiNote - 48) / 80);
+  const effectiveDuration = duration * pitchFactor + duration * (1 - pitchFactor) * 0.5;
+  const totalDuration = Math.max(0.3, effectiveDuration);
 
-  // Main oscillator (slightly detuned pair for richness)
-  const osc1 = ctx.createOscillator();
-  const osc2 = ctx.createOscillator();
-  const osc3 = ctx.createOscillator(); // 3rd harmonic for body
-  const gainNode = ctx.createGain();
+  // Slight random detune for natural feel (±3 cents)
+  const detuneCents = (Math.random() - 0.5) * 6;
 
-  osc1.type = 'triangle';
-  osc1.frequency.setValueAtTime(freq, now);
-  osc1.detune.setValueAtTime(detuneAmount, now);
+  // Output gain for this note
+  const noteGain = ctx.createGain();
+  noteGain.connect(master);
 
-  osc2.type = 'sine';
-  osc2.frequency.setValueAtTime(freq * 2, now); // octave harmonic
-  osc2.detune.setValueAtTime(3 + detuneAmount * 0.5, now); // slight detune
+  // -- Harmonic oscillators --
+  const numHarmonics = freq < 500 ? 8 : freq < 1000 ? 6 : 4;
 
-  osc3.type = 'sine';
-  osc3.frequency.setValueAtTime(freq * 3, now); // 3rd harmonic
-  osc3.detune.setValueAtTime(detuneAmount * 0.3, now);
+  for (let h = 0; h < numHarmonics; h++) {
+    const harmonicNum = h + 1;
+    const harmonicFreq = freq * harmonicNum;
 
-  // ADSR envelope with softer attack curve using setTargetAtTime
-  const attack = 0.015;
-  const decay = 0.1;
-  const sustain = velocity * 0.4;
-  const release = duration * 0.5;
+    // Skip harmonics above Nyquist
+    if (harmonicFreq > ctx.sampleRate / 2) break;
 
-  gainNode.gain.setValueAtTime(0, now);
-  gainNode.gain.setTargetAtTime(velocity, now, attack / 3); // softer attack curve
-  gainNode.gain.linearRampToValueAtTime(sustain, now + attack + decay);
-  gainNode.gain.linearRampToValueAtTime(sustain, now + duration - release);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    // Slight inharmonicity (piano strings are slightly stiff)
+    const inharmonicity = 1 + 0.0002 * harmonicNum * harmonicNum * (midiNote > 60 ? 1.5 : 1);
+    const actualFreq = harmonicFreq * inharmonicity;
 
-  // Second oscillator at lower volume
-  const gain2 = ctx.createGain();
-  gain2.gain.setValueAtTime(velocity * 0.15, now);
-  gain2.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
 
-  // Third oscillator (3rd harmonic) very quiet
-  const gain3 = ctx.createGain();
-  gain3.gain.setValueAtTime(velocity * 0.05, now);
-  gain3.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(actualFreq, now);
+    osc.detune.setValueAtTime(detuneCents * (1 / harmonicNum), now);
 
-  osc1.connect(gainNode);
-  osc2.connect(gain2);
-  osc3.connect(gain3);
-  gainNode.connect(ctx.destination);
-  gain2.connect(ctx.destination);
-  gain3.connect(ctx.destination);
+    const amp = (HARMONIC_AMPS[h] ?? 0.005) * velocity;
 
-  osc1.start(now);
-  osc2.start(now);
-  osc3.start(now);
-  osc1.stop(now + duration + 0.05);
-  osc2.stop(now + duration + 0.05);
-  osc3.stop(now + duration + 0.05);
+    // Sharper attack for lower harmonics, softer for upper
+    const attackTime = 0.003 + h * 0.001;
+    // Higher harmonics decay much faster
+    const harmonicDecay = totalDuration * (1 / (1 + h * 0.4));
+
+    oscGain.gain.setValueAtTime(0, now);
+    oscGain.gain.linearRampToValueAtTime(amp, now + attackTime);
+    oscGain.gain.setTargetAtTime(amp * 0.3, now + attackTime, harmonicDecay * 0.3);
+    oscGain.gain.setTargetAtTime(0.0001, now + harmonicDecay * 0.6, harmonicDecay * 0.4);
+
+    osc.connect(oscGain);
+    oscGain.connect(noteGain);
+    osc.start(now);
+    osc.stop(now + totalDuration + 0.1);
+  }
+
+  // -- Percussive hammer attack (noise burst) --
+  const noiseLen = 0.02;
+  const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * noiseLen, ctx.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) {
+    noiseData[i] = (Math.random() * 2 - 1) * 0.5;
+  }
+
+  const noiseSource = ctx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+
+  // Bandpass filter the noise around the note frequency for a "woody" hammer sound
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.setValueAtTime(Math.min(freq * 2, 4000), now);
+  noiseFilter.Q.setValueAtTime(1.5, now);
+
+  const noiseGain = ctx.createGain();
+  const noiseAmp = velocity * 0.25 * (freq > 500 ? 1.2 : 0.8);
+  noiseGain.gain.setValueAtTime(noiseAmp, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLen);
+
+  noiseSource.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(noteGain);
+  noiseSource.start(now);
+  noiseSource.stop(now + noiseLen + 0.01);
+
+  // -- Overall envelope --
+  noteGain.gain.setValueAtTime(1, now);
+  noteGain.gain.setTargetAtTime(0.0001, now + totalDuration * 0.7, totalDuration * 0.3);
+
+  // -- Simple reverb via a single delay feedback --
+  if (reverbAmount > 0.01) {
+    const reverbGain = ctx.createGain();
+    reverbGain.gain.value = reverbAmount * 0.4;
+
+    const delay = ctx.createDelay();
+    delay.delayTime.value = 0.06;
+
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0.25;
+
+    const lpf = ctx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 3000;
+
+    noteGain.connect(delay);
+    delay.connect(lpf);
+    lpf.connect(feedback);
+    feedback.connect(delay);
+    lpf.connect(reverbGain);
+    reverbGain.connect(master);
+  }
 }
 
 // Play a sequence of notes with timing
@@ -217,7 +220,7 @@ export function playClick(accent: boolean = false): void {
 
 // Play multiple notes simultaneously with slight stagger
 export function playChord(midiNotes: number[], duration?: number, velocity?: number): void {
-  const staggerMs = 5;
+  const staggerMs = 8;
   for (let i = 0; i < midiNotes.length; i++) {
     setTimeout(() => {
       playNote(midiNotes[i], duration, velocity);
@@ -225,8 +228,7 @@ export function playChord(midiNotes: number[], duration?: number, velocity?: num
   }
 }
 
-// Set reverb amount (0.0 = all dry, 1.0 = all wet, default 0.2 = 80/20 dry/wet)
+// Set reverb amount (0.0 = dry, 1.0 = max reverb)
 export function setReverb(amount: number): void {
-  reverbAmount = Math.max(0, Math.min(1, amount)); // clamp to [0, 1]
-  updateReverbMix();
+  reverbAmount = Math.max(0, Math.min(1, amount));
 }

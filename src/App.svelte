@@ -4,6 +4,7 @@
   import Sidebar from './components/Sidebar.svelte';
   import Home from './pages/Home.svelte';
   import Practice from './pages/Practice.svelte';
+  import Songs from './pages/Songs.svelte';
   import Lesson1 from './lessons/Lesson1.svelte';
   import Lesson2 from './lessons/Lesson2.svelte';
   import Lesson3 from './lessons/Lesson3.svelte';
@@ -53,6 +54,8 @@
       <Home />
     {:else if router.isPractice}
       <Practice />
+    {:else if router.isSongs}
+      <Songs />
     {:else if router.lessonId === 1}
       <Lesson1 />
     {:else if router.lessonId === 2}

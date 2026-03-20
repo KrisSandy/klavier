@@ -68,19 +68,18 @@
 
   // ── Styling helpers ────────────────────────────────────────────────────────
 
+  // Use percentage-based positioning so the keyboard fills its container
+  const whiteKeyWidthPct = $derived(100 / whiteKeys.length);
+
   function getWhiteKeyStyle(index: number): string {
-    const width = "40px";
-    const height = "150px";
-    const xPos = index * 40;
-    return `position: absolute; left: ${xPos}px; top: 0; width: ${width}; height: ${height};`;
+    const left = index * whiteKeyWidthPct;
+    return `position: absolute; left: ${left}%; top: 0; width: ${whiteKeyWidthPct}%; height: 150px;`;
   }
 
   function getBlackKeyStyle(whiteIndex: number): string {
-    const width = "24px";
-    const height = "95px";
-    // Black keys are positioned between white keys, offset to the right of their "left" white key
-    const xPos = (whiteIndex + 1) * 40 - 12; // Center on boundary
-    return `position: absolute; left: ${xPos}px; top: 0; width: ${width}; height: ${height};`;
+    const blackWidthPct = whiteKeyWidthPct * 0.6;
+    const left = (whiteIndex + 1) * whiteKeyWidthPct - blackWidthPct / 2;
+    return `position: absolute; left: ${left}%; top: 0; width: ${blackWidthPct}%; height: 95px;`;
   }
 
   function getKeyBackground(keyId: string): string {
@@ -130,10 +129,10 @@
 >
   <!-- Keyboard container -->
   <div
-    style="overflow-x: auto; border: 1px solid #ddd; border-radius: 6px; background: #fff; padding: 8px;"
+    style="border: 1px solid #ddd; border-radius: 6px; background: #fff; padding: 8px;"
   >
     <div
-      style="position: relative; width: {whiteKeys.length * 40}px; height: 160px; background: #fff;"
+      style="position: relative; width: 100%; height: 160px; background: #fff;"
     >
       <!-- White keys -->
       {#each whiteKeys as whiteKey, i}
