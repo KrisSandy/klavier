@@ -1,4 +1,5 @@
 // Progress store - tracks completed lessons, quiz scores, streaks
+// Respects user's localStorage consent preference
 
 export interface QuizScore {
   lessonId: number;
@@ -18,6 +19,7 @@ export interface ProgressData {
 }
 
 const STORAGE_KEY = 'klavier-progress';
+const CONSENT_KEY = 'klavier-consent';
 
 const defaultProgress: ProgressData = {
   completedLessons: [],
@@ -27,6 +29,17 @@ const defaultProgress: ProgressData = {
   lastActiveDate: '',
   totalPracticeMinutes: 0,
 };
+
+function hasConsent(): boolean {
+  try {
+    const raw = localStorage.getItem(CONSENT_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return parsed.status === 'accepted';
+  } catch {
+    return false;
+  }
+}
 
 function load(): ProgressData {
   try {
@@ -39,7 +52,10 @@ function load(): ProgressData {
 }
 
 function save(data: ProgressData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Only persist to localStorage if user has granted consent
+  if (hasConsent()) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
 }
 
 class ProgressStore {
@@ -50,6 +66,7 @@ class ProgressStore {
   }
 
   completeLesson(lessonId: number) {
+    if (!hasConsent()) return;
     if (!this.data.completedLessons.includes(lessonId)) {
       this.data.completedLessons = [...this.data.completedLessons, lessonId];
     }
@@ -58,11 +75,13 @@ class ProgressStore {
   }
 
   uncompleteLesson(lessonId: number) {
+    if (!hasConsent()) return;
     this.data.completedLessons = this.data.completedLessons.filter(id => id !== lessonId);
     this.persist();
   }
 
   saveQuizScore(lessonId: number, score: number, total: number, bestTimeMs: number) {
+    if (!hasConsent()) return;
     const existing = this.data.quizScores[lessonId];
     if (!existing || score > existing.score || (score === existing.score && bestTimeMs < existing.bestTimeMs)) {
       this.data.quizScores = {
@@ -82,6 +101,7 @@ class ProgressStore {
   }
 
   addPracticeTime(minutes: number) {
+    if (!hasConsent()) return;
     this.data.totalPracticeMinutes += minutes;
     this.updateStreak();
     this.persist();
@@ -112,7 +132,7 @@ class ProgressStore {
 
   reset() {
     this.data = { ...defaultProgress };
-    this.persist();
+    localStorage.removeItem(STORAGE_KEY);
   }
 }
 

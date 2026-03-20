@@ -44,6 +44,18 @@ class Router {
     const match = this.current.match(/^\/?songs\/(.+)$/);
     return match ? match[1] : null;
   }
+
+  get isPrivacy() {
+    return this.current === '/privacy';
+  }
+
+  get isTerms() {
+    return this.current === '/terms';
+  }
+
+  get isSettings() {
+    return this.current === '/settings';
+  }
 }
 
 export const router = new Router();

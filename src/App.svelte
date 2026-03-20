@@ -2,9 +2,13 @@
   import { router } from './router.svelte';
   import { sidebar } from './stores/sidebar.svelte';
   import Sidebar from './components/Sidebar.svelte';
+  import ConsentBanner from './components/ConsentBanner.svelte';
   import Home from './pages/Home.svelte';
   import Practice from './pages/Practice.svelte';
   import Songs from './pages/Songs.svelte';
+  import PrivacyPolicy from './pages/PrivacyPolicy.svelte';
+  import TermsOfService from './pages/TermsOfService.svelte';
+  import Settings from './pages/Settings.svelte';
   import Lesson1 from './lessons/Lesson1.svelte';
   import Lesson2 from './lessons/Lesson2.svelte';
   import Lesson3 from './lessons/Lesson3.svelte';
@@ -56,6 +60,12 @@
       <Practice />
     {:else if router.isSongs}
       <Songs />
+    {:else if router.isPrivacy}
+      <PrivacyPolicy />
+    {:else if router.isTerms}
+      <TermsOfService />
+    {:else if router.isSettings}
+      <Settings />
     {:else if router.lessonId === 1}
       <Lesson1 />
     {:else if router.lessonId === 2}
@@ -106,5 +116,23 @@
 </div>
 
 <footer class="text-center py-4 text-[0.75rem] text-[#b4b2a7] border-t border-[#e8e6e0] mt-auto shrink-0">
-  Klavier — Learn piano at your own pace
+  <span>Klavier — Learn piano at your own pace</span>
+  <div class="mt-1.5 flex items-center justify-center gap-3">
+    <button
+      class="text-[0.7rem] text-[#b4b2a7] bg-transparent border-none cursor-pointer p-0 hover:text-navy transition-colors underline"
+      onclick={() => router.navigate('/privacy')}
+    >Privacy</button>
+    <span class="text-[#dad9d4]">·</span>
+    <button
+      class="text-[0.7rem] text-[#b4b2a7] bg-transparent border-none cursor-pointer p-0 hover:text-navy transition-colors underline"
+      onclick={() => router.navigate('/terms')}
+    >Terms</button>
+    <span class="text-[#dad9d4]">·</span>
+    <button
+      class="text-[0.7rem] text-[#b4b2a7] bg-transparent border-none cursor-pointer p-0 hover:text-navy transition-colors underline"
+      onclick={() => router.navigate('/settings')}
+    >Settings</button>
+  </div>
 </footer>
+
+<ConsentBanner />

@@ -102,5 +102,21 @@
       <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">🎵</span>
       <span>Songs</span>
     </button>
+
+    <!-- Spacer to push settings to bottom -->
+    <div class="flex-1"></div>
+
+    <!-- Divider -->
+    <div class="border-t border-[#dad9d4] my-2 mx-5"></div>
+
+    <!-- Settings link -->
+    <button
+      class="flex items-center gap-[0.6rem] py-[0.65rem] px-5 bg-transparent cursor-pointer text-[0.9rem] text-left leading-[1.4] transition-colors duration-120 w-full hover:bg-[#f5f0e8] hover:text-navy border-none mb-2"
+      style="border-left: 3px solid {router.isSettings ? '#ce7e4f' : 'transparent'}; color: {router.isSettings ? '#3d3929' : '#6b6455'}; font-weight: {router.isSettings ? '600' : '400'};"
+      onclick={() => navigateTo('/settings')}
+    >
+      <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">⚙</span>
+      <span>Settings</span>
+    </button>
   </nav>
 </aside>
