@@ -5,6 +5,7 @@
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
+  import { ALL_LETTERS } from '../data/notes';
   import { playNote, playSequence } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
 
@@ -49,17 +50,25 @@
     }, totalDuration + 200);
   }
 
-  // Bass clef notes data (G2 to A3)
-  const bassClefNotes = [
-    { id: 'G2', yPos: 20, line: false },
-    { id: 'A2', yPos: 30, line: false },
-    { id: 'B2', yPos: 40, line: true },
-    { id: 'C3', yPos: 50, line: false },
-    { id: 'D3', yPos: 60, line: true },
-    { id: 'E3', yPos: 70, line: false },
-    { id: 'F3', yPos: 80, line: true },
-    { id: 'G3', yPos: 90, line: false },
-    { id: 'A3', yPos: 100, line: true },
+  // Bass clef notes with y positions on the staff
+  // Staff lines at y=40(top/A3), 60(F3), 80(D3), 100(B2), 120(bottom/G2)
+  // Spaces: G3=50, E3=70, C3=90, A2=110
+  // Ledger line notes above: C4=20 (ledger at 20), B3=30 (space above staff)
+  // Ledger line notes below: F2=130 (space below staff), E2=140 (ledger at 140)
+  const BASS_NOTES = [
+    { id: 'C4', name: 'C', yPos: 20, ledgerLines: [20] },
+    { id: 'B3', name: 'B', yPos: 30, ledgerLines: [] as number[] },
+    { id: 'A3', name: 'A', yPos: 40, ledgerLines: [] as number[] },
+    { id: 'G3', name: 'G', yPos: 50, ledgerLines: [] as number[] },
+    { id: 'F3', name: 'F', yPos: 60, ledgerLines: [] as number[] },
+    { id: 'E3', name: 'E', yPos: 70, ledgerLines: [] as number[] },
+    { id: 'D3', name: 'D', yPos: 80, ledgerLines: [] as number[] },
+    { id: 'C3', name: 'C', yPos: 90, ledgerLines: [] as number[] },
+    { id: 'B2', name: 'B', yPos: 100, ledgerLines: [] as number[] },
+    { id: 'A2', name: 'A', yPos: 110, ledgerLines: [] as number[] },
+    { id: 'G2', name: 'G', yPos: 120, ledgerLines: [] as number[] },
+    { id: 'F2', name: 'F', yPos: 130, ledgerLines: [] as number[] },
+    { id: 'E2', name: 'E', yPos: 140, ledgerLines: [140] },
   ];
 
   // Quiz generation
@@ -72,71 +81,42 @@
     return a;
   }
 
-  function generateScaleQuestions(): QuizQuestion[] {
+  function generateBassClefQuestions(): {
+    questions: QuizQuestion[];
+    noteMap: Record<string, number>;
+    ledgerMap: Record<string, number[]>;
+  } {
     const questions: QuizQuestion[] = [];
+    const noteMap: Record<string, number> = {};
+    const ledgerMap: Record<string, number[]> = {};
 
-    // Questions about scale degrees
-    const degrees = [1, 2, 3, 4, 5, 6, 7];
-    for (let i = 0; i < 5; i++) {
-      const degree = degrees[Math.floor(Math.random() * degrees.length)];
-      const correctNote = cMajorScale[degree - 1].note;
-      const choices = shuffle(
-        cMajorScale
-          .slice(0, 7)
-          .map(n => n.note)
-          .filter(n => n !== correctNote)
-      )
-        .slice(0, 3)
-        .concat(correctNote);
+    // Pick 7 random notes from the 13 available — different subset each time
+    const picked = shuffle([...BASS_NOTES]).slice(0, 7);
 
+    for (let i = 0; i < picked.length; i++) {
+      const note = picked[i];
+      const distractors = shuffle(ALL_LETTERS.filter(l => l !== note.name)).slice(0, 3);
+      const qId = `q${i}-${note.id}`;
+      noteMap[qId] = note.yPos;
+      ledgerMap[qId] = note.ledgerLines;
       questions.push({
-        id: `q-scale-${i}`,
-        prompt: `What is the ${degree === 1 ? '1st' : degree === 2 ? '2nd' : degree === 3 ? '3rd' : degree + 'th'} note of the C major scale?`,
-        correctAnswer: correctNote,
-        choices: shuffle(choices),
+        id: qId,
+        prompt: 'What note is this?',
+        correctAnswer: note.name,
+        choices: shuffle([note.name, ...distractors]),
       });
     }
-
-    // Questions about bass clef notes
-    const bassNotes = ['B2', 'D3', 'F3', 'A3'];
-    for (let i = 0; i < 3; i++) {
-      const note = bassNotes[Math.floor(Math.random() * bassNotes.length)];
-      const isLine = note === 'B2' || note === 'D3' || note === 'F3' || note === 'A3';
-      const allBassNotes = ['G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3'];
-      const choices = shuffle(
-        allBassNotes.filter(n => n !== note)
-      )
-        .slice(0, 3)
-        .concat(note);
-
-      const position =
-        note === 'B2'
-          ? 'bottom line'
-          : note === 'D3'
-            ? 'middle line'
-            : note === 'F3'
-              ? 'middle line (F clef)'
-              : 'top line';
-
-      questions.push({
-        id: `q-bass-${i}`,
-        prompt: `What note sits on the ${position} of the bass clef?`,
-        correctAnswer: note,
-        choices: shuffle(choices),
-      });
-    }
-
-    return shuffle(questions);
+    return { questions, noteMap, ledgerMap };
   }
 
-  let quizQuestions = $state(generateScaleQuestions());
+  let quizData = $state(generateBassClefQuestions());
 
   function onQuizComplete(score: number, total: number) {
     progress.saveQuizScore(4, score, total, 0);
   }
 
   function startQuiz() {
-    quizQuestions = generateScaleQuestions();
+    quizData = generateBassClefQuestions();
     showQuiz = true;
   }
 </script>
@@ -152,13 +132,13 @@
     <!-- Bass clef visual -->
     <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] mb-6">
       <p class="text-sm font-semibold text-navy mb-4">Bass Clef Staff (F Clef)</p>
-      <svg viewBox="0 0 500 200" width="100%" style="max-width: 500px;" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 510 200" width="100%" style="max-width: 510px;" xmlns="http://www.w3.org/2000/svg">
         <!-- Staff lines -->
-        <line x1="30" y1="40" x2="480" y2="40" stroke="black" stroke-width="1.5" />
-        <line x1="30" y1="60" x2="480" y2="60" stroke="black" stroke-width="1.5" />
-        <line x1="30" y1="80" x2="480" y2="80" stroke="black" stroke-width="1.5" />
-        <line x1="30" y1="100" x2="480" y2="100" stroke="black" stroke-width="1.5" />
-        <line x1="30" y1="120" x2="480" y2="120" stroke="black" stroke-width="1.5" />
+        <line x1="30" y1="40" x2="475" y2="40" stroke="black" stroke-width="1.5" />
+        <line x1="30" y1="60" x2="475" y2="60" stroke="black" stroke-width="1.5" />
+        <line x1="30" y1="80" x2="475" y2="80" stroke="black" stroke-width="1.5" />
+        <line x1="30" y1="100" x2="475" y2="100" stroke="black" stroke-width="1.5" />
+        <line x1="30" y1="120" x2="475" y2="120" stroke="black" stroke-width="1.5" />
 
         <!-- Bass clef symbol (F clef) -->
         <text
@@ -169,9 +149,18 @@
           fill="black"
         >𝄢</text>
 
-        <!-- Label: F line -->
-        <text x="340" y="105" font-size="12" fill="#ce7e4f" font-weight="bold">F</text>
-        <line x1="320" y1="100" x2="330" y2="100" stroke="#ce7e4f" stroke-width="1.5" />
+        <!-- Note labels at the end of the staff -->
+        <!-- Lines (bottom to top): G2=120, B2=100, D3=80, F3=60, A3=40 -->
+        <text x="488" y="124" font-size="12" fill="#ce7e4f" font-weight="bold">G</text>
+        <text x="488" y="104" font-size="12" fill="#ce7e4f" font-weight="bold">B</text>
+        <text x="488" y="84" font-size="12" fill="#ce7e4f" font-weight="bold">D</text>
+        <text x="488" y="64" font-size="12" fill="#ce7e4f" font-weight="bold">F</text>
+        <text x="488" y="44" font-size="12" fill="#ce7e4f" font-weight="bold">A</text>
+        <!-- Spaces (bottom to top): A2=110, C3=90, E3=70, G3=50 -->
+        <text x="488" y="114" font-size="11" fill="#6b6455">A</text>
+        <text x="488" y="94" font-size="11" fill="#6b6455">C</text>
+        <text x="488" y="74" font-size="11" fill="#6b6455">E</text>
+        <text x="488" y="54" font-size="11" fill="#6b6455">G</text>
       </svg>
     </div>
 
@@ -380,60 +369,88 @@
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test what you've learned? Answer questions about the C major scale and the bass clef.
+        Ready to identify notes on the bass clef? Each question shows a note on the staff — including ledger line notes above and below. Pick the correct letter name.
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
         onclick={startQuiz}
       >Start Quiz</button>
     {:else}
-      <QuizEngine questions={quizQuestions} onComplete={onQuizComplete}>
-        {#snippet children({ currentQuestion })}
-          <!-- Visual hint for scale degree questions -->
-          {#if currentQuestion.id.includes('scale')}
-            <div class="mb-6 bg-white rounded-lg p-6 border border-[#e8e6e0]">
-              <p class="text-sm font-semibold text-navy mb-3">C Major Scale Degrees:</p>
-              <div class="grid grid-cols-7 gap-2 text-center text-sm">
-                {#each cMajorScale.slice(0, 7) as note}
-                  <div>
-                    <p class="font-bold text-navy text-lg">{note.roman}</p>
-                    <p class="text-[0.85rem] text-[#666]">{note.note}</p>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
+      <QuizEngine questions={quizData.questions} onComplete={onQuizComplete}>
+        {#snippet children({ currentQuestion, questionIndex })}
+          {@const qId = quizData.questions[questionIndex]?.id}
+          {@const noteYPos = qId ? quizData.noteMap[qId] ?? 80 : 80}
+          {@const ledgerLines = qId ? (quizData.ledgerMap[qId] || []) : []}
+          {@const stemUp = noteYPos >= 80}
+          <div class="mb-4 flex justify-center">
+            <svg
+              viewBox="0 -15 500 220"
+              xmlns="http://www.w3.org/2000/svg"
+              width="100%"
+              style="max-width: 500px; display: block; margin: 0 auto;"
+              role="img"
+              aria-label="Bass clef staff with a note to identify"
+            >
+              <!-- 5 staff lines -->
+              <line x1="30" y1="40" x2="480" y2="40" stroke="black" stroke-width="1.5" />
+              <line x1="30" y1="60" x2="480" y2="60" stroke="black" stroke-width="1.5" />
+              <line x1="30" y1="80" x2="480" y2="80" stroke="black" stroke-width="1.5" />
+              <line x1="30" y1="100" x2="480" y2="100" stroke="black" stroke-width="1.5" />
+              <line x1="30" y1="120" x2="480" y2="120" stroke="black" stroke-width="1.5" />
 
-          <!-- Visual hint for bass clef questions -->
-          {#if currentQuestion.id.includes('bass')}
-            <div class="mb-6 bg-white rounded-lg p-6 border border-[#e8e6e0]">
-              <p class="text-sm font-semibold text-navy mb-3">Bass Clef Reference:</p>
-              <svg viewBox="0 0 400 200" width="100%" style="max-width: 400px;" xmlns="http://www.w3.org/2000/svg">
-                <!-- Staff lines -->
-                <line x1="30" y1="40" x2="380" y2="40" stroke="black" stroke-width="1.5" />
-                <line x1="30" y1="60" x2="380" y2="60" stroke="black" stroke-width="1.5" />
-                <line x1="30" y1="80" x2="380" y2="80" stroke="black" stroke-width="1.5" />
-                <line x1="30" y1="100" x2="380" y2="100" stroke="black" stroke-width="1.5" />
-                <line x1="30" y1="120" x2="380" y2="120" stroke="black" stroke-width="1.5" />
+              <!-- Bass clef -->
+              <text
+                x="42"
+                y="115"
+                font-size="70"
+                font-family="'Noto Music', serif"
+                fill="black"
+              >&#x1D122;</text>
 
-                <!-- Bass clef -->
-                <text x="42" y="115" font-size="70" font-family="'Noto Music', serif" fill="black">𝄢</text>
+              <!-- Ledger lines (short lines through/near the note) -->
+              {#each ledgerLines as ly}
+                <line
+                  x1={280 - 16}
+                  y1={ly}
+                  x2={280 + 16}
+                  y2={ly}
+                  stroke="black"
+                  stroke-width="1.5"
+                />
+              {/each}
 
-                <!-- Note labels -->
-                <text x="340" y="45" font-size="12" fill="#666" font-weight="bold">G</text>
-                <text x="340" y="65" font-size="12" fill="#666" font-weight="bold">B</text>
-                <text x="340" y="85" font-size="12" fill="#666" font-weight="bold">D</text>
-                <text x="340" y="105" font-size="12" fill="#666" font-weight="bold">F</text>
-                <text x="340" y="125" font-size="12" fill="#666" font-weight="bold">A</text>
+              <!-- Note head -->
+              <ellipse
+                cx="280"
+                cy={noteYPos}
+                rx="10"
+                ry="7"
+                fill="black"
+                transform="rotate(-20, 280, {noteYPos})"
+              />
 
-                <!-- Spaces -->
-                <text x="360" y="55" font-size="12" fill="#999" font-weight="bold">A</text>
-                <text x="360" y="75" font-size="12" fill="#999" font-weight="bold">C</text>
-                <text x="360" y="95" font-size="12" fill="#999" font-weight="bold">E</text>
-                <text x="360" y="115" font-size="12" fill="#999" font-weight="bold">G</text>
-              </svg>
-            </div>
-          {/if}
+              <!-- Stem -->
+              {#if stemUp}
+                <line
+                  x1={280 + 9}
+                  y1={noteYPos}
+                  x2={280 + 9}
+                  y2={noteYPos - 35}
+                  stroke="black"
+                  stroke-width="1.5"
+                />
+              {:else}
+                <line
+                  x1={280 - 9}
+                  y1={noteYPos}
+                  x2={280 - 9}
+                  y2={noteYPos + 35}
+                  stroke="black"
+                  stroke-width="1.5"
+                />
+              {/if}
+            </svg>
+          </div>
         {/snippet}
       </QuizEngine>
     {/if}

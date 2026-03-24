@@ -33,6 +33,24 @@
     </div>
   </div>
 
+  <!-- Practice Stats -->
+  {#if progress.data.totalSessions > 0}
+    <div class="grid grid-cols-3 gap-4 mb-10">
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4 text-center">
+        <p class="text-[1.8rem] font-bold text-navy">{progress.practiceSessionsThisWeek}</p>
+        <p class="text-[0.8rem] text-[#999] mt-1">Sessions This Week</p>
+      </div>
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4 text-center">
+        <p class="text-[1.8rem] font-bold text-correct">{progress.overallBestAccuracy}%</p>
+        <p class="text-[0.8rem] text-[#999] mt-1">Best Accuracy</p>
+      </div>
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4 text-center">
+        <p class="text-[1.8rem] font-bold text-navy">{progress.data.totalSessions}</p>
+        <p class="text-[0.8rem] text-[#999] mt-1">Total Sessions</p>
+      </div>
+    </div>
+  {/if}
+
   <!-- Quick Actions -->
   <div class="flex gap-3 mb-10">
     <button

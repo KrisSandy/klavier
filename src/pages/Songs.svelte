@@ -103,6 +103,12 @@
         >
           {isPlaying ? 'Stop' : 'Play'}
         </button>
+        <button
+          class="bg-correct text-white px-5 py-2.5 rounded-lg text-[0.9rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
+          onclick={() => router.navigate(`/practice?song=${activeSong.id}`)}
+        >
+          Practice
+        </button>
         <Metronome initialBpm={activeSong.bpm} />
       </div>
     </section>

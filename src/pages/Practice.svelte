@@ -1,19 +1,42 @@
 <script lang="ts">
-  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
-  import Metronome from '../components/Metronome.svelte';
+  import PracticeCanvas from '../components/PracticeCanvas.svelte';
   import EarTraining from '../components/EarTraining.svelte';
   import RhythmTrainer from '../components/RhythmTrainer.svelte';
   import SightReadingExercise from '../components/SightReadingExercise.svelte';
   import IntervalTrainer from '../components/IntervalTrainer.svelte';
-  import { playNote } from '../stores/audio';
+  import { SONGS, getSongById, type Song } from '../data/songs';
 
-  let activeKey = $state<string | null>(null);
-  let activeTab = $state<'keyboard' | 'ear' | 'rhythm' | 'sight' | 'intervals'>('keyboard');
+  let activeTab = $state<'piano' | 'ear' | 'rhythm' | 'sight' | 'intervals'>('piano');
 
-  function handleNotePlay(note: string, midiNote: number) {
-    playNote(midiNote);
-    activeKey = note;
-    setTimeout(() => { activeKey = null; }, 200);
+  // ── Song selection for guided practice ─────────────────────────────────────
+  let selectedSong = $state<Song | null>(null);
+  let practiceMode = $state<'free' | 'guided'>('free');
+
+  // Check for ?song= query parameter (from Songs page "Practice" button)
+  $effect(() => {
+    const hash = window.location.hash;
+    const queryIndex = hash.indexOf('?');
+    if (queryIndex >= 0) {
+      const params = new URLSearchParams(hash.slice(queryIndex));
+      const songId = params.get('song');
+      if (songId) {
+        const song = getSongById(songId);
+        if (song) {
+          selectedSong = song;
+          practiceMode = 'guided';
+        }
+      }
+    }
+  });
+
+  function selectSong(song: Song) {
+    selectedSong = song;
+    practiceMode = 'guided';
+  }
+
+  function clearSong() {
+    selectedSong = null;
+    practiceMode = 'free';
   }
 
   // Rhythm patterns for practice
@@ -24,6 +47,11 @@
     { name: 'Waltz Feel', pattern: [1, 1, 1], bpm: 100, timeSignature: [3, 4] as [number, number] },
   ];
   let selectedPattern = $state(0);
+
+  // Beginner-friendly songs for the song picker
+  const practiceableSongs = $derived(
+    SONGS.filter(s => s.lines.flat().length <= 40).slice(0, 6)
+  );
 </script>
 
 <div class="max-w-4xl mx-auto px-6 py-8">
@@ -33,10 +61,10 @@
   </p>
 
   <!-- Tab switcher -->
-  <div class="flex gap-2 mb-6">
+  <div class="flex gap-2 mb-6 flex-wrap">
     <button
-      class="px-4 py-2 rounded-lg text-sm font-medium transition-all {activeTab === 'keyboard' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
-      onclick={() => activeTab = 'keyboard'}
+      class="px-4 py-2 rounded-lg text-sm font-medium transition-all {activeTab === 'piano' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
+      onclick={() => activeTab = 'piano'}
     >Piano</button>
     <button
       class="px-4 py-2 rounded-lg text-sm font-medium transition-all {activeTab === 'ear' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
@@ -56,21 +84,29 @@
     >Intervals</button>
   </div>
 
-  <!-- Keyboard tab -->
-  {#if activeTab === 'keyboard'}
-    <div class="bg-white rounded-lg border border-[#e8e6e0] p-6 mb-6">
-      <VirtualKeyboard
-        startOctave={3}
-        endOctave={5}
-        onNotePlay={handleNotePlay}
-        {activeKey}
-        showLabels={true}
-      />
+  <!-- Piano tab — unified practice canvas -->
+  {#if activeTab === 'piano'}
+    <!-- Mode toggle: Free Play vs Guided -->
+    <div class="flex items-center gap-3 mb-4">
+      <button
+        class="px-3 py-1.5 rounded text-sm font-medium transition-all {practiceMode === 'free' ? 'bg-purple text-white' : 'bg-[#faf9f5] text-navy border border-[#dad9d4] hover:border-purple'}"
+        onclick={clearSong}
+      >Free Play</button>
+      <span class="text-sm text-[#6b6455]">or choose a song:</span>
+      <div class="flex gap-2 flex-wrap">
+        {#each practiceableSongs as song}
+          <button
+            class="px-3 py-1.5 rounded text-sm font-medium transition-all {selectedSong?.id === song.id ? 'bg-purple text-white' : 'bg-[#faf9f5] text-navy border border-[#dad9d4] hover:border-purple'}"
+            onclick={() => selectSong(song)}
+          >{song.title}</button>
+        {/each}
+      </div>
     </div>
-    <div class="bg-white rounded-lg border border-[#e8e6e0] p-6">
-      <h2 class="text-[1rem] font-semibold text-navy mb-4">Metronome</h2>
-      <Metronome initialBpm={120} />
-    </div>
+
+    <PracticeCanvas
+      song={selectedSong}
+      mode={practiceMode}
+    />
 
   <!-- Ear Training tab -->
   {:else if activeTab === 'ear'}

@@ -1,11 +1,8 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
   import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
-  import QuizEngine from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
-  import { progress } from '../stores/progress.svelte';
   import { playNote } from '../stores/audio';
-  import type { QuizQuestion } from '../components/QuizEngine.svelte';
 
   const lesson = getLessonById(2)!;
 
@@ -76,93 +73,6 @@
     playNext();
   }
 
-  // Quiz questions — must match QuizQuestion interface: { id, prompt, correctAnswer, choices }
-  const questions: QuizQuestion[] = [
-    {
-      id: 'q1',
-      prompt: 'Which finger is number 1 on both hands?',
-      correctAnswer: 'Thumb',
-      choices: ['Index finger', 'Thumb', 'Middle finger', 'Pinky'],
-    },
-    {
-      id: 'q2',
-      prompt: 'What is finger number 5?',
-      correctAnswer: 'Pinky (little finger)',
-      choices: ['Ring finger', 'Thumb', 'Middle finger', 'Pinky (little finger)'],
-    },
-    {
-      id: 'q3',
-      prompt: 'In the right hand C position, which finger plays middle C?',
-      correctAnswer: 'Finger 1 (thumb)',
-      choices: ['Finger 5 (pinky)', 'Finger 3 (middle)', 'Finger 1 (thumb)', 'Finger 2 (index)'],
-    },
-    {
-      id: 'q4',
-      prompt: 'In the left hand C position, which finger plays C?',
-      correctAnswer: 'Finger 5 (pinky)',
-      choices: ['Finger 1 (thumb)', 'Finger 5 (pinky)', 'Finger 3 (middle)', 'Finger 2 (index)'],
-    },
-    {
-      id: 'q5',
-      prompt: 'What does "C position" mean?',
-      correctAnswer: 'Each finger rests on one white key starting from C',
-      choices: [
-        'Playing only the note C',
-        'Each finger rests on one white key starting from C',
-        'Using only your right hand',
-        'Playing a C chord',
-      ],
-    },
-    {
-      id: 'q6',
-      prompt: 'Why is the thumb numbered 1 (not 5)?',
-      correctAnswer: 'Because it is closest to the center of the keyboard and most used',
-      choices: [
-        'Because it is the smallest finger',
-        'Because it is closest to the center of the keyboard and most used',
-        'It is just a random convention',
-        'Because it moves first',
-      ],
-    },
-    {
-      id: 'q7',
-      prompt: 'Which finger number is the ring finger?',
-      correctAnswer: '4',
-      choices: ['2', '3', '4', '5'],
-    },
-    {
-      id: 'q8',
-      prompt: 'In the right hand, finger 3 plays which note in C position?',
-      correctAnswer: 'E',
-      choices: ['C', 'D', 'E', 'F'],
-    },
-    {
-      id: 'q9',
-      prompt: 'What should your hand shape look like when playing?',
-      correctAnswer: 'Gently curved, as if holding a ball',
-      choices: [
-        'Flat with fingers straight',
-        'Gently curved, as if holding a ball',
-        'Fingers spread wide apart',
-        'Fist-like, with fingers tucked in',
-      ],
-    },
-    {
-      id: 'q10',
-      prompt: 'Are the finger numbers the same for both hands?',
-      correctAnswer: 'Yes — thumb is always 1, pinky is always 5',
-      choices: [
-        'No, they are reversed',
-        'Yes — thumb is always 1, pinky is always 5',
-        'Only for the right hand',
-        'They use letters instead of numbers for the left hand',
-      ],
-    },
-  ];
-
-  function handleQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(lesson.id, score, total, 0);
-  }
 </script>
 
 <LessonLayout {lesson}>
@@ -495,21 +405,4 @@
     </div>
   </section>
 
-  <!-- Quiz -->
-  <section class="mb-10">
-    <h2 class="text-[1.25rem] font-bold text-navy mb-4">Quiz: Finger Numbers</h2>
-    <QuizEngine
-      {questions}
-      onComplete={handleQuizComplete}
-    >
-      {#snippet children({ currentQuestion, questionIndex })}
-        <p class="text-[0.95rem] text-navy font-medium mb-1">
-          Question {questionIndex + 1} of {questions.length}
-        </p>
-        <p class="text-[1.1rem] text-[#333] text-center mb-6">
-          {currentQuestion.prompt}
-        </p>
-      {/snippet}
-    </QuizEngine>
-  </section>
 </LessonLayout>
