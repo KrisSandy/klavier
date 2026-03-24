@@ -35,7 +35,7 @@ describe('Router', () => {
     (router as any).current = '/lesson-0';
     expect(router.lessonId).toBeNull();
 
-    (router as any).current = '/lesson-19';
+    (router as any).current = '/lesson-20';
     expect(router.lessonId).toBeNull();
 
     (router as any).current = '/lesson-99';

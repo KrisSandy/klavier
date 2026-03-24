@@ -116,11 +116,11 @@
           style="border-left: 3px solid {isActive ? '#ce7e4f' : 'transparent'}; color: {isActive ? '#3d3929' : '#6b6455'}; font-weight: {isActive ? '600' : '400'}; background: {isActive ? '#f5f0e8' : 'transparent'};"
           onclick={() => navigateTo(`/lesson-${lesson.id}`)}
         >
-          <span class="text-[0.8rem] shrink-0" style="width: 1.2rem; text-align: center;">
+          <span class="shrink-0 flex items-center justify-center" style="width: 1.2rem;">
             {#if isCompleted}
-              <span style="color: #28a745;">✓</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
             {:else}
-              <span style="color: #b4b2a7;">{lesson.id}</span>
+              <span class="text-[0.8rem]" style="color: #b4b2a7; text-align: center;">{lesson.id}</span>
             {/if}
           </span>
           <span>{lesson.title}</span>
@@ -137,7 +137,7 @@
       style="border-left: 3px solid {router.isPractice ? '#ce7e4f' : 'transparent'}; color: {router.isPractice ? '#3d3929' : '#6b6455'}; font-weight: {router.isPractice ? '600' : '400'};"
       onclick={() => navigateTo('/practice')}
     >
-      <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">🎹</span>
+      <span class="flex items-center justify-center" style="width: 1.2rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" /><line x1="6" y1="4" x2="6" y2="14" /><line x1="10" y1="4" x2="10" y2="14" /><line x1="14" y1="4" x2="14" y2="14" /><line x1="18" y1="4" x2="18" y2="14" /></svg></span>
       <span>Practice</span>
     </button>
 
@@ -147,7 +147,7 @@
       style="border-left: 3px solid {router.isSongs ? '#ce7e4f' : 'transparent'}; color: {router.isSongs ? '#3d3929' : '#6b6455'}; font-weight: {router.isSongs ? '600' : '400'};"
       onclick={() => navigateTo('/songs')}
     >
-      <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">🎵</span>
+      <span class="flex items-center justify-center" style="width: 1.2rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg></span>
       <span>Songs</span>
     </button>
 
@@ -163,7 +163,7 @@
       style="border-left: 3px solid {router.isSettings ? '#ce7e4f' : 'transparent'}; color: {router.isSettings ? '#3d3929' : '#6b6455'}; font-weight: {router.isSettings ? '600' : '400'};"
       onclick={() => navigateTo('/settings')}
     >
-      <span class="text-[0.8rem]" style="width: 1.2rem; text-align: center;">⚙</span>
+      <span class="flex items-center justify-center" style="width: 1.2rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg></span>
       <span>Settings</span>
     </button>
   </nav>

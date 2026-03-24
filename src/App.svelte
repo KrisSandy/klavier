@@ -76,7 +76,7 @@
       {/key}
     {:else}
       <div class="max-w-3xl mx-auto px-6 py-16 text-center">
-        <div class="text-[3rem] mb-4">🎹</div>
+        <div class="mb-4 flex justify-center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#b4b2a7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" /><line x1="6" y1="4" x2="6" y2="14" /><line x1="10" y1="4" x2="10" y2="14" /><line x1="14" y1="4" x2="14" y2="14" /><line x1="18" y1="4" x2="18" y2="14" /></svg></div>
         <h1 class="text-[1.6rem] font-bold text-navy mb-3">Page not found</h1>
         <p class="text-[1rem] text-[#6b6455] mb-2">
           The page <code class="text-[0.85rem] bg-[#f0ede6] px-2 py-0.5 rounded text-navy">#{router.current}</code> doesn't exist.

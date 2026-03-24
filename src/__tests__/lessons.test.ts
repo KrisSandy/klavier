@@ -12,9 +12,10 @@ describe('MODULES', () => {
     expect(MODULES).toHaveLength(6);
   });
 
-  it('each module has 3 lessons', () => {
+  it('each module has 3 or 4 lessons', () => {
     for (const mod of MODULES) {
-      expect(mod.lessons).toHaveLength(3);
+      expect(mod.lessons.length).toBeGreaterThanOrEqual(3);
+      expect(mod.lessons.length).toBeLessThanOrEqual(4);
     }
   });
 
@@ -32,13 +33,13 @@ describe('MODULES', () => {
 });
 
 describe('LESSONS', () => {
-  it('has exactly 18 lessons', () => {
-    expect(LESSONS).toHaveLength(18);
+  it('has exactly 19 lessons', () => {
+    expect(LESSONS).toHaveLength(19);
   });
 
-  it('IDs are sequential 1–18', () => {
+  it('IDs are sequential 1–19', () => {
     expect(LESSONS.map(l => l.id)).toEqual(
-      Array.from({ length: 18 }, (_, i) => i + 1)
+      Array.from({ length: 19 }, (_, i) => i + 1)
     );
   });
 
@@ -77,12 +78,16 @@ describe('getLessonById', () => {
 
     const lesson18 = getLessonById(18);
     expect(lesson18).toBeDefined();
-    expect(lesson18!.title).toBe('Putting It All Together');
+    expect(lesson18!.title).toBe('Musical Form');
+
+    const lesson19 = getLessonById(19);
+    expect(lesson19).toBeDefined();
+    expect(lesson19!.title).toBe('Putting It All Together');
   });
 
   it('returns undefined for invalid IDs', () => {
     expect(getLessonById(0)).toBeUndefined();
-    expect(getLessonById(19)).toBeUndefined();
+    expect(getLessonById(20)).toBeUndefined();
     expect(getLessonById(-1)).toBeUndefined();
   });
 });
@@ -101,8 +106,10 @@ describe('getLessonBySlug', () => {
 });
 
 describe('getModuleLessons', () => {
-  it('returns 3 lessons for each module', () => {
-    for (let mod = 1; mod <= 6; mod++) {
+  it('returns correct number of lessons for each module', () => {
+    // Module 1 has 4 lessons, modules 2–6 have 3 each
+    expect(getModuleLessons(1)).toHaveLength(4);
+    for (let mod = 2; mod <= 6; mod++) {
       expect(getModuleLessons(mod)).toHaveLength(3);
     }
   });

@@ -64,13 +64,13 @@
     <h2 class="text-[1.15rem] font-semibold text-navy mb-4">Data Storage Consent</h2>
     <div class="bg-white rounded-lg border border-[#e8e6e0] p-5">
       <div class="flex items-start gap-3 mb-4">
-        <span class="text-[1.2rem] mt-0.5">
+        <span class="mt-0.5 shrink-0 flex items-center justify-center" style="width: 1.5rem; height: 1.5rem;">
           {#if consent.hasConsented}
-            ✅
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
           {:else if consent.hasDeclined}
-            ❌
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
           {:else}
-            ⏳
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b4b2a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
           {/if}
         </span>
         <div>

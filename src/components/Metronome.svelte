@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { playClick } from '../stores/audio';
+
   let { initialBpm = 120 }: { initialBpm?: number } = $props();
 
   // eslint-disable-next-line -- intentionally capturing initial value only
@@ -33,28 +35,6 @@
     isRunning = false;
     beat = 0;
     clearInterval(beatInterval);
-  }
-
-  function playClick(accent: boolean) {
-    // Use Web Audio API to play a simple click sound
-    // If you have a dedicated audio store, import it here
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.frequency.value = accent ? 1000 : 800;
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.05);
-    } catch (e) {
-      // Audio context not available
-    }
   }
 
   function incrementBpm() {

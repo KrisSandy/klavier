@@ -67,15 +67,7 @@
 <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
   <div style="font-size: 1.25rem; font-weight: 600; color: #3d3929;">{chordName}</div>
 
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    style="cursor: {interactive ? 'pointer' : 'default'}; border-radius: 0.5rem; padding: 0.5rem; background: #f0ebe5;"
-    onclick={handlePlayChord}
-    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePlayChord(); }}
-    role={interactive ? 'button' : 'img'}
-    tabindex={interactive ? 0 : -1}
-    aria-label="Chord diagram for {chordName}"
-  >
+  {#snippet keyboardDisplay()}
     <div style="position: relative; display: flex; width: max-content; height: 160px; background: #f0ebe5; border-radius: 0.25rem;">
       {#each whiteKeys as wk, idx}
         <div
@@ -124,5 +116,24 @@
         </div>
       {/each}
     </div>
-  </div>
+  {/snippet}
+
+  {#if interactive}
+    <button
+      type="button"
+      style="cursor: pointer; border-radius: 0.5rem; padding: 0.5rem; background: #f0ebe5; border: none;"
+      onclick={handlePlayChord}
+      aria-label="Play {chordName} chord"
+    >
+      {@render keyboardDisplay()}
+    </button>
+  {:else}
+    <div
+      role="img"
+      style="border-radius: 0.5rem; padding: 0.5rem; background: #f0ebe5;"
+      aria-label="Chord diagram for {chordName}"
+    >
+      {@render keyboardDisplay()}
+    </div>
+  {/if}
 </div>

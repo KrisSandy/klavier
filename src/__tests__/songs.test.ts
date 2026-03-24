@@ -64,10 +64,10 @@ describe('getSongById', () => {
 });
 
 describe('getSongsByLesson', () => {
-  it('returns songs linked to lesson 3', () => {
-    const songs = getSongsByLesson(3);
+  it('returns songs linked to lesson 4', () => {
+    const songs = getSongsByLesson(4);
     expect(songs.length).toBeGreaterThanOrEqual(1);
-    expect(songs.every(s => s.lessonId === 3)).toBe(true);
+    expect(songs.every(s => s.lessonId === 4)).toBe(true);
   });
 
   it('returns empty array for lesson with no songs', () => {

@@ -72,15 +72,15 @@ describe('progress store', () => {
   it('completionPercent calculates correctly', async () => {
     grantConsent();
     const { progress } = await import('../stores/progress.svelte');
-    // 0 of 18
+    // 0 of 19
     expect(progress.completionPercent).toBe(0);
-    // 9 of 18 = 50%
+    // 9 of 19 ≈ 47%
     for (let i = 1; i <= 9; i++) {
       progress.completeLesson(i);
     }
-    expect(progress.completionPercent).toBe(50);
-    // 18 of 18 = 100%
-    for (let i = 10; i <= 18; i++) {
+    expect(progress.completionPercent).toBe(47);
+    // 19 of 19 = 100%
+    for (let i = 10; i <= 19; i++) {
       progress.completeLesson(i);
     }
     expect(progress.completionPercent).toBe(100);

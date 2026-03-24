@@ -78,7 +78,11 @@
             <span class="w-6 h-6 rounded-full flex items-center justify-center text-[0.75rem] font-medium shrink-0"
               style="background: {isCompleted ? '#d4edda' : '#f0ede6'}; color: {isCompleted ? '#155724' : '#999'};"
             >
-              {isCompleted ? '✓' : lesson.id}
+              {#if isCompleted}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#155724" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+              {:else}
+                {lesson.id}
+              {/if}
             </span>
             <div class="flex-1 min-w-0">
               <p class="text-[0.95rem] text-navy font-medium truncate">{lesson.title}</p>
