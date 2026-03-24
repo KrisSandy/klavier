@@ -1,16 +1,15 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
+  import SightReadingExercise from '../components/SightReadingExercise.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
+  import { TREBLE_NOTES } from '../data/notes';
   import { getLessonById } from '../data/lessons';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(14)!;
 
   let showQuiz = $state(false);
-  let highlightKeys = $state<string[]>([]);
-  let activeKeySignature = $state<string | null>(null);
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -21,83 +20,65 @@
     return a;
   }
 
-  // Key signature data
-  const keySignatures: Record<string, { sharps?: string[]; flats?: string[]; scale: string[]; description: string }> = {
-    'C major': { scale: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'], description: 'No sharps or flats' },
-    'G major': { sharps: ['F#'], scale: ['G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F#5', 'G5'], description: '1 sharp: F#' },
-    'D major': { sharps: ['F#', 'C#'], scale: ['D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C#5', 'D5'], description: '2 sharps: F#, C#' },
-    'A major': { sharps: ['F#', 'C#', 'G#'], scale: ['A4', 'B4', 'C#5', 'D5', 'E5', 'F#5', 'G#5', 'A5'], description: '3 sharps: F#, C#, G#' },
-    'F major': { flats: ['Bb'], scale: ['F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5'], description: '1 flat: Bb' },
-    'Bb major': { flats: ['Bb', 'Eb'], scale: ['B4', 'C5', 'D5', 'E5', 'F5', 'G5', 'A5'], description: '2 flats: Bb, Eb' },
-  };
+  // Easy pool: notes on the staff lines and spaces
+  const easyNotes = TREBLE_NOTES.filter(n => n.yPos >= 40 && n.yPos <= 120);
+  // Hard pool: includes ledger line notes
+  const allNotes = TREBLE_NOTES.filter(n => n.yPos >= 20 && n.yPos <= 150);
 
-  function showScale(key: string) {
-    activeKeySignature = key;
-    const sig = keySignatures[key];
-    highlightKeys = sig.scale;
-  }
+  let difficulty = $state<'easy' | 'hard'>('easy');
+  let speed = $state(4);
+
+  const activePool = $derived(difficulty === 'easy' ? easyNotes : allNotes);
 
   function generateQuestions(): QuizQuestion[] {
     return [
       {
         id: 'q1',
-        prompt: 'What does a key signature tell you?',
-        correctAnswer: 'Which notes are sharp or flat throughout the piece',
-        choices: shuffle(['Which notes are sharp or flat throughout the piece', 'How fast to play', 'How loud to play', 'Which hand to use']),
+        prompt: 'What is sight-reading?',
+        correctAnswer: 'Playing music you haven\'t seen before',
+        choices: shuffle(['Playing music you haven\'t seen before', 'Memorising a piece before playing', 'Reading lyrics while singing', 'Playing by ear']),
       },
       {
         id: 'q2',
-        prompt: 'How many sharps does G major have?',
-        correctAnswer: '1 (F#)',
-        choices: shuffle(['1 (F#)', '2 (F#, C#)', '0', '3 (F#, C#, G#)']),
+        prompt: 'What is the most important habit for improving sight-reading?',
+        correctAnswer: 'Looking ahead while playing',
+        choices: shuffle(['Looking ahead while playing', 'Playing as fast as possible', 'Memorising every note', 'Practising scales only']),
       },
       {
         id: 'q3',
-        prompt: 'How many sharps does D major have?',
-        correctAnswer: '2 (F#, C#)',
-        choices: shuffle(['2 (F#, C#)', '1 (F#)', '3 (F#, C#, G#)', '0']),
+        prompt: 'When sight-reading, what should you do if you make a mistake?',
+        correctAnswer: 'Keep going and stay in time',
+        choices: shuffle(['Keep going and stay in time', 'Stop and start over', 'Go back and fix the mistake', 'Slow down dramatically']),
       },
       {
         id: 'q4',
-        prompt: 'What is the order of sharps in key signatures?',
-        correctAnswer: 'F C G D A E B',
-        choices: shuffle(['F C G D A E B', 'B E A D G C F', 'C D E F G A B', 'G A B C D E F']),
+        prompt: 'Before sight-reading a piece, what should you check first?',
+        correctAnswer: 'Time signature and key signature',
+        choices: shuffle(['Time signature and key signature', 'The title and composer', 'The last measure', 'The fingering numbers']),
       },
       {
         id: 'q5',
-        prompt: 'What is the order of flats in key signatures?',
-        correctAnswer: 'B E A D G C F',
-        choices: shuffle(['B E A D G C F', 'F C G D A E B', 'C D E F G A B', 'A B C D E F G']),
+        prompt: 'Which strategy helps you read notes faster?',
+        correctAnswer: 'Recognising patterns like steps and skips',
+        choices: shuffle(['Recognising patterns like steps and skips', 'Naming each note individually', 'Playing very slowly', 'Closing your eyes']),
       },
       {
         id: 'q6',
-        prompt: 'F major has which flat?',
-        correctAnswer: 'Bb',
-        choices: shuffle(['Bb', 'Eb', 'Ab', 'Db']),
+        prompt: 'A "step" on the staff means the note moves to the...',
+        correctAnswer: 'next line or space (adjacent position)',
+        choices: shuffle(['next line or space (adjacent position)', 'same position', 'opposite end of the staff', 'nearest black key']),
       },
       {
         id: 'q7',
-        prompt: 'If a key signature has 3 sharps, the key is most likely...',
-        correctAnswer: 'A major',
-        choices: shuffle(['A major', 'E major', 'D major', 'B major']),
+        prompt: 'A "skip" on the staff means the note moves...',
+        correctAnswer: 'over one line or space',
+        choices: shuffle(['over one line or space', 'to the same position', 'down an octave', 'to a black key']),
       },
       {
         id: 'q8',
-        prompt: 'The circle of fifths shows keys moving by...',
-        correctAnswer: 'ascending fifths (adding one sharp each time)',
-        choices: shuffle(['ascending fifths (adding one sharp each time)', 'ascending octaves', 'descending thirds', 'random intervals']),
-      },
-      {
-        id: 'q9',
-        prompt: 'Where is the key signature placed on sheet music?',
-        correctAnswer: 'Between the clef and the time signature',
-        choices: shuffle(['Between the clef and the time signature', 'After the time signature', 'At the end of the piece', 'Above the staff']),
-      },
-      {
-        id: 'q10',
-        prompt: 'A natural sign (♮) in the music means...',
-        correctAnswer: 'Cancel a sharp or flat from the key signature',
-        choices: shuffle(['Cancel a sharp or flat from the key signature', 'Play the note louder', 'Hold the note longer', 'Play the note staccato']),
+        prompt: 'What does "reading ahead" mean in sight-reading?',
+        correctAnswer: 'Your eyes are on the next notes while your hands play the current ones',
+        choices: shuffle(['Your eyes are on the next notes while your hands play the current ones', 'Skipping difficult passages', 'Turning the page early', 'Playing the notes before you see them']),
       },
     ];
   }
@@ -105,7 +86,7 @@
   let quizData = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(14, score, total, 0);
+    progress.saveQuizScore(13, score, total, 0);
   }
 
   function startQuiz() {
@@ -115,92 +96,121 @@
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: What is a Key Signature -->
+  <!-- Section 1: What is Sight-Reading -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is a Key Signature?</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is Sight-Reading?</h2>
     <p class="text-[#444] leading-[1.7] mb-3">
-      A <strong>key signature</strong> appears at the beginning of each line of music, right after the clef. It tells you which notes are <strong>sharp (#) or flat (b) throughout the entire piece</strong> — so you don't have to write accidentals on every single note.
+      Sight-reading is the ability to play a piece of music <strong>the first time you see it</strong>, without having practised it before. It's one of the most valuable skills a pianist can develop — it lets you learn new music quickly, play with other musicians, and enjoy a much wider range of music.
     </p>
     <p class="text-[#444] leading-[1.7] mb-3">
-      For example, if you see one sharp (F#) in the key signature, <strong>every F in the piece is played as F#</strong> unless a natural sign (♮) cancels it.
+      The key to good sight-reading is <strong>reading ahead</strong>. Your eyes should always be a beat or two ahead of your hands. Think of it like reading a book aloud — you don't look at each word as you say it, you glance ahead to keep the flow smooth.
     </p>
   </section>
 
-  <!-- Section 2: Sharp Keys -->
+  <!-- Section 2: Steps and Skips -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Sharp Key Signatures</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Sharps are added in a specific order: <strong>F C G D A E B</strong> (remember: "Father Charles Goes Down And Ends Battle"). Each new sharp adds one more to the collection:
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Recognising Steps and Skips</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      Instead of reading every single note name, trained sight-readers see <strong>patterns</strong>. The two most fundamental patterns are:
     </p>
-    <div class="space-y-3 mb-4">
-      {#each [['C major', '0 sharps'], ['G major', '1 sharp: F#'], ['D major', '2 sharps: F#, C#'], ['A major', '3 sharps: F#, C#, G#']] as [key, desc]}
-        <button
-          class="w-full text-left p-3 rounded-lg border-2 transition-all {activeKeySignature === key ? 'border-purple bg-[#fdf6f0]' : 'border-[#e8e6e0] bg-white hover:border-purple'}"
-          onclick={() => showScale(key)}
-        >
-          <span class="font-semibold text-navy">{key}</span>
-          <span class="text-sm text-[#666] ml-2">— {desc}</span>
-        </button>
-      {/each}
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
+        <p class="font-semibold text-navy mb-1">Step</p>
+        <p class="text-sm text-[#444]">The note moves to the <strong>next adjacent position</strong> on the staff — from a line to the next space, or a space to the next line. On the keyboard, this is the next white key (or next note in the scale).</p>
+      </div>
+      <div class="bg-white rounded-lg p-4 border-l-4 border-navy">
+        <p class="font-semibold text-navy mb-1">Skip</p>
+        <p class="text-sm text-[#444]">The note <strong>jumps over</strong> one position — from line to line, or space to space. On the keyboard, this skips one white key.</p>
+      </div>
     </div>
+    <p class="text-[#444] leading-[1.7]">
+      Once you can instantly see "step up, step up, skip down, step up" you barely need to read individual note names. This is how experienced musicians read so quickly.
+    </p>
   </section>
 
-  <!-- Section 3: Flat Keys -->
+  <!-- Section 3: Tips -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Flat Key Signatures</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Flats are added in the <strong>reverse order</strong>: <strong>B E A D G C F</strong> ("Battle Ends And Down Goes Charles's Father"). Moving in the opposite direction around the circle of fifths:
-    </p>
-    <div class="space-y-3 mb-4">
-      {#each [['F major', '1 flat: Bb'], ['Bb major', '2 flats: Bb, Eb']] as [key, desc]}
-        <button
-          class="w-full text-left p-3 rounded-lg border-2 transition-all {activeKeySignature === key ? 'border-purple bg-[#fdf6f0]' : 'border-[#e8e6e0] bg-white hover:border-purple'}"
-          onclick={() => showScale(key)}
-        >
-          <span class="font-semibold text-navy">{key}</span>
-          <span class="text-sm text-[#666] ml-2">— {desc}</span>
-        </button>
-      {/each}
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Sight-Reading Tips</h2>
+    <div class="space-y-3">
+      <div class="flex gap-3 items-start">
+        <span class="text-purple font-bold text-lg shrink-0">1</span>
+        <p class="text-[#444]"><strong>Scan before you play.</strong> Look at the key signature, time signature, and scan the whole piece for tricky spots.</p>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="text-purple font-bold text-lg shrink-0">2</span>
+        <p class="text-[#444]"><strong>Keep a steady tempo.</strong> It's better to play slowly and steadily than to rush and stumble.</p>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="text-purple font-bold text-lg shrink-0">3</span>
+        <p class="text-[#444]"><strong>Don't stop for mistakes.</strong> In sight-reading, keeping the rhythm going is more important than hitting every note.</p>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="text-purple font-bold text-lg shrink-0">4</span>
+        <p class="text-[#444]"><strong>Look for patterns.</strong> Steps, skips, repeated notes, scale fragments, chord shapes — they're everywhere.</p>
+      </div>
     </div>
-  </section>
 
-  <!-- Section 4: Interactive Keyboard -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Explore Scales</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Click a key above to highlight its scale on the keyboard. Notice how each key uses different combinations of white and black keys:
-    </p>
-    {#if activeKeySignature}
-      <p class="text-sm text-[#666] mb-2">
-        Showing: <strong class="text-navy">{activeKeySignature}</strong> — {keySignatures[activeKeySignature].description}
+    <!-- Fingering Tip -->
+    <div class="mt-6 bg-[#fdf6f0] rounded-lg p-4 border-l-4 border-purple">
+      <p class="font-semibold text-navy mb-2">Fingering Tip: Read Your Fingers First</p>
+      <p class="text-[#444] text-sm leading-[1.6] mb-2">
+        When sight-reading, scan for <strong>finger numbers</strong> before you start playing. Good fingering planning helps you look ahead instead of down at your hands.
       </p>
-    {/if}
-    <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
-      <VirtualKeyboard startOctave={4} endOctave={5} showLabels={true} {highlightKeys} />
+      <ul class="text-sm text-[#444] leading-[1.6] space-y-1 ml-4">
+        <li>• Look at the <strong>starting position</strong> — which hand position do you need to begin in?</li>
+        <li>• If a passage moves <strong>stepwise</strong> (C–D–E–F–G), keep fingers in position — no need to look at your hands.</li>
+        <li>• If you see a <strong>skip</strong> (e.g., C to E), the fingering gap mirrors the note gap (finger 1 to 3).</li>
+        <li>• This reduces the need to look at your hands, freeing your eyes to read ahead.</li>
+      </ul>
     </div>
   </section>
 
-  <!-- Section 5: Circle of Fifths -->
+  <!-- Section 4: Practice Drill -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Circle of Fifths</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      The <strong>circle of fifths</strong> is a visual representation of how all keys relate to each other. Going clockwise, each key is a fifth above the previous one and adds one sharp. Going anticlockwise, each key is a fourth above (or a fifth below) and adds one flat.
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Sight-Reading Drill</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Notes will appear on the staff one at a time. Identify each note as fast as you can before the timer runs out. The faster you go, the better your sight-reading becomes.
     </p>
-    <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-      <p class="text-[#444] text-sm mb-2"><strong>Clockwise (sharps):</strong> C → G → D → A → E → B → F# → ...</p>
-      <p class="text-[#444] text-sm"><strong>Anticlockwise (flats):</strong> C → F → Bb → Eb → Ab → Db → Gb → ...</p>
+
+    <div class="flex gap-4 mb-4 items-center">
+      <div class="flex gap-2">
+        <button
+          class="px-3 py-1.5 rounded text-sm font-medium transition-all {difficulty === 'easy' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
+          onclick={() => difficulty = 'easy'}
+        >Staff Notes</button>
+        <button
+          class="px-3 py-1.5 rounded text-sm font-medium transition-all {difficulty === 'hard' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
+          onclick={() => difficulty = 'hard'}
+        >+ Ledger Lines</button>
+      </div>
+      <div class="flex gap-2 items-center">
+        <span class="text-sm text-[#666]">Speed:</span>
+        <button
+          class="px-3 py-1.5 rounded text-sm font-medium transition-all {speed === 5 ? 'bg-purple text-white' : 'bg-white text-navy border border-[#dad9d4]'}"
+          onclick={() => speed = 5}
+        >Slow</button>
+        <button
+          class="px-3 py-1.5 rounded text-sm font-medium transition-all {speed === 4 ? 'bg-purple text-white' : 'bg-white text-navy border border-[#dad9d4]'}"
+          onclick={() => speed = 4}
+        >Medium</button>
+        <button
+          class="px-3 py-1.5 rounded text-sm font-medium transition-all {speed === 2.5 ? 'bg-purple text-white' : 'bg-white text-navy border border-[#dad9d4]'}"
+          onclick={() => speed = 2.5}
+        >Fast</button>
+      </div>
     </div>
-    <p class="text-[#444] leading-[1.7] mt-3">
-      You don't need to memorise the entire circle right now. Focus on keys with up to 3 sharps or flats — these cover the vast majority of beginner and intermediate repertoire.
-    </p>
+
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-6">
+      <SightReadingExercise notePool={activePool} timePerNote={speed} />
+    </div>
   </section>
 
-  <!-- Section 6: Quiz -->
+  <!-- Section 5: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test your understanding of key signatures?
+        Ready to test your understanding of sight-reading techniques?
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"

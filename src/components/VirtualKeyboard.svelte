@@ -84,7 +84,7 @@
 
   function getKeyBackground(keyId: string): string {
     const isHighlighted = highlightKeys.includes(keyId);
-    const isActive = activeKey === keyId;
+    const isActive = activeKey === keyId || pressedKey === keyId;
 
     if (isActive) {
       return "#ce7e4f"; // terracotta
@@ -121,6 +121,68 @@
     if (onNotePlay) {
       onNotePlay(key.id, key.midiNote);
     }
+  }
+
+  // ── Keyboard mapping ──────────────────────────────────────────────────────
+  // Maps physical keyboard keys to piano notes in the current octave range.
+  // Lower row (a-j) = natural notes, upper row (w,e,t,y,u) = sharps/flats.
+  const naturalKeyMap: Record<string, string> = {
+    a: 'C', s: 'D', d: 'E', f: 'F', g: 'G', h: 'A', j: 'B',
+  };
+  const sharpKeyMap: Record<string, string> = {
+    w: 'C#', e: 'D#', t: 'F#', y: 'G#', u: 'A#',
+  };
+
+  let pressedKey = $state<string | null>(null);
+
+  function handlePhysicalKeydown(e: KeyboardEvent) {
+    if (e.repeat) return;
+    const k = e.key.toLowerCase();
+    const octave = startOctave;
+
+    let noteId: string | null = null;
+    if (naturalKeyMap[k]) {
+      noteId = `${naturalKeyMap[k]}${octave}`;
+    } else if (sharpKeyMap[k]) {
+      noteId = `${sharpKeyMap[k]}${octave}`;
+    }
+
+    if (noteId) {
+      e.preventDefault();
+      pressedKey = noteId;
+      const key = allKeys.find((pk) => pk.id === noteId);
+      if (key) handleKeyClick(key);
+    }
+  }
+
+  function handlePhysicalKeyup(e: KeyboardEvent) {
+    const k = e.key.toLowerCase();
+    const octave = startOctave;
+    let noteId: string | null = null;
+    if (naturalKeyMap[k]) noteId = `${naturalKeyMap[k]}${octave}`;
+    else if (sharpKeyMap[k]) noteId = `${sharpKeyMap[k]}${octave}`;
+    if (noteId && pressedKey === noteId) pressedKey = null;
+  }
+
+  $effect(() => {
+    window.addEventListener('keydown', handlePhysicalKeydown);
+    window.addEventListener('keyup', handlePhysicalKeyup);
+    return () => {
+      window.removeEventListener('keydown', handlePhysicalKeydown);
+      window.removeEventListener('keyup', handlePhysicalKeyup);
+    };
+  });
+
+  // Map note IDs to their keyboard shortcut labels
+  function getKeyHint(keyId: string): string {
+    const letter = keyId.replace(/\d+$/, ''); // strip octave
+    for (const [k, v] of Object.entries(naturalKeyMap)) {
+      if (v === letter) return k.toUpperCase();
+    }
+    for (const [k, v] of Object.entries(sharpKeyMap)) {
+      if (v === letter) return k.toUpperCase();
+    }
+    return '';
   }
 </script>
 
@@ -178,10 +240,14 @@
               e.currentTarget.style.backgroundColor = "#fff";
             }
           }}
-          aria-label="Note {whiteKey.id}"
+          aria-label="Note {whiteKey.id}, press {getKeyHint(whiteKey.id)} to play"
         >
           {#if showLabels}
             <span>{whiteKey.id}</span>
+            {@const hint = getKeyHint(whiteKey.id)}
+            {#if hint && whiteKey.octave === startOctave}
+              <span style="font-size: 9px; color: #aaa; margin-top: 2px;">{hint}</span>
+            {/if}
           {/if}
         </button>
       {/each}
@@ -235,10 +301,14 @@
                 e.currentTarget.style.backgroundColor = "#1a1a1a";
               }
             }}
-            aria-label="Note {blackKey.id}"
+            aria-label="Note {blackKey.id}, press {getKeyHint(blackKey.id)} to play"
           >
             {#if showLabels}
               <span>{blackKey.id}</span>
+              {@const hint = getKeyHint(blackKey.id)}
+              {#if hint && blackKey.octave === startOctave}
+                <span style="font-size: 8px; color: #999; margin-top: 1px;">{hint}</span>
+              {/if}
             {/if}
           </button>
         {/if}
@@ -252,9 +322,10 @@
       <span style="display: inline-block; width: 12px; height: 12px; background: #fde68a; border: 1px solid #ddd; margin-right: 4px; vertical-align: middle; border-radius: 2px;"></span>
       Highlighted
     </span>
-    <span>
+    <span style="margin-right: 16px;">
       <span style="display: inline-block; width: 12px; height: 12px; background: #ce7e4f; border: 1px solid #ddd; margin-right: 4px; vertical-align: middle; border-radius: 2px;"></span>
       Active
     </span>
+    <span style="color: #999;">Use keys A–J for notes, W E T Y U for sharps</span>
   </div>
 </div>

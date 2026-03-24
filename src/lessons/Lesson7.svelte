@@ -1,14 +1,52 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import RhythmTrainer from '../components/RhythmTrainer.svelte';
+  import SongStaff from '../components/SongStaff.svelte';
+  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
+  import Metronome from '../components/Metronome.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
+  import { getSongsByLesson } from '../data/songs';
+  import { getNoteById } from '../data/notes';
+  import { playNote, playSequence } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(7)!;
+  const songs = getSongsByLesson(6);
+  const waltz = songs[0]; // Simple Waltz
 
+  let isPlaying = $state(false);
+  let highlightIndex = $state(-1);
+  let playbackStop: { stop: () => void } | null = null;
   let showQuiz = $state(false);
+
+  function playMelody() {
+    if (isPlaying && playbackStop) {
+      playbackStop.stop();
+      isPlaying = false;
+      highlightIndex = -1;
+      return;
+    }
+
+    // Get all notes from all lines
+    const allNotes = waltz.lines.flat();
+    const noteSequence = allNotes.map(id => {
+      const note = getNoteById(id);
+      return { midiNote: note?.midiNote ?? 60, duration: 1 };
+    });
+
+    isPlaying = true;
+    playbackStop = playSequence(noteSequence, waltz.bpm, (index) => {
+      highlightIndex = index;
+    });
+
+    // Auto-stop after sequence finishes
+    const totalDuration = noteSequence.length * (60 / waltz.bpm) * 1000;
+    setTimeout(() => {
+      isPlaying = false;
+      highlightIndex = -1;
+    }, totalDuration + 200);
+  }
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -19,256 +57,301 @@
     return a;
   }
 
+  // Generate G major scale quiz questions
   function generateQuestions(): QuizQuestion[] {
-    const questions: QuizQuestion[] = [];
+    const qs: QuizQuestion[] = [];
 
-    // Question 1: How many beats do eighth notes get?
-    questions.push({
-      id: 'q1',
-      prompt: 'How many beats does a single eighth note get in 4/4 time?',
-      correctAnswer: '0.5 beats',
-      choices: shuffle(['0.5 beats', '1 beat', '2 beats', '1.5 beats']),
-    });
+    // Rest identification questions
+    const restQuestions = [
+      {
+        id: 'rest-whole',
+        prompt: 'How many beats of silence does a whole rest get?',
+        answer: '4',
+      },
+      {
+        id: 'rest-half',
+        prompt: 'How many beats of silence does a half rest get?',
+        answer: '2',
+      },
+      {
+        id: 'rest-quarter',
+        prompt: 'How many beats of silence does a quarter rest get?',
+        answer: '1',
+      },
+    ];
 
-    // Question 2: How many eighth notes in one beat?
-    questions.push({
-      id: 'q2',
-      prompt: 'How many eighth notes fit in one quarter note (1 beat)?',
-      correctAnswer: '2',
-      choices: shuffle(['1', '2', '3', '4']),
-    });
+    // G major scale and key signature questions
+    const scaleQuestions = [
+      {
+        id: 'gmaj-sharp',
+        prompt: 'What is the only sharp in the key of G major?',
+        answer: 'F#',
+      },
+      {
+        id: 'gmaj-start',
+        prompt: 'What note does the G major scale start on?',
+        answer: 'G',
+      },
+      {
+        id: 'gmaj-3rd',
+        prompt: 'What is the 3rd note of the G major scale?',
+        answer: 'B',
+      },
+      {
+        id: 'gmaj-5th',
+        prompt: 'What is the 5th note of the G major scale?',
+        answer: 'D',
+      },
+      {
+        id: 'gmaj-7th',
+        prompt: 'What is the 7th note of the G major scale?',
+        answer: 'F#',
+      },
+      {
+        id: 'gmaj-sharps',
+        prompt: 'How many sharps are in the key of G major?',
+        answer: '1',
+      },
+      {
+        id: 'time-sig',
+        prompt: 'In 3/4 time, how many beats are in each measure?',
+        answer: '3',
+      },
+    ];
 
-    // Question 3: How many eighth notes in one measure?
-    questions.push({
-      id: 'q3',
-      prompt: 'How many eighth notes fit in one measure of 4/4 time?',
-      correctAnswer: '8',
-      choices: shuffle(['4', '6', '8', '16']),
-    });
+    // Combine and shuffle
+    const allQuestions = shuffle([...restQuestions, ...scaleQuestions]);
 
-    // Question 4: Counting pattern
-    questions.push({
-      id: 'q4',
-      prompt: 'What is the correct way to count a pattern of four eighth notes followed by a quarter note?',
-      correctAnswer: '1-and-2-and-3',
-      choices: shuffle(['1-2-3-4', '1-and-2-and-3', '1-and-2-and-3-and-4', 'one-two-three']),
-    });
+    // Take first 10 for the quiz
+    for (let i = 0; i < Math.min(10, allQuestions.length); i++) {
+      const q = allQuestions[i];
+      let choices: string[];
 
-    // Question 5: Eighth note symbol
-    questions.push({
-      id: 'q5',
-      prompt: 'Which symbol represents an eighth note?',
-      correctAnswer: '♪',
-      choices: shuffle(['○', '𝅗𝅥', '♩', '♪']),
-    });
+      // Generate appropriate choices based on answer type
+      if (q.answer === '4' || q.answer === '2' || q.answer === '1' || q.answer === '3') {
+        // Beat-count questions
+        choices = shuffle(['1', '2', '3', '4']);
+      } else if (q.answer === 'F#') {
+        // Sharp questions
+        choices = shuffle(['F#', 'C#', 'Bb', 'G#']);
+      } else if (q.answer === 'G' || q.answer === 'B' || q.answer === 'D') {
+        // Note name questions
+        choices = shuffle([q.answer, ...['A', 'C', 'E', 'F'].slice(0, 3)]);
+      } else {
+        // Fallback
+        choices = shuffle([q.answer, '2', '3', '4']);
+      }
 
-    // Question 6: Two eighth notes duration
-    questions.push({
-      id: 'q6',
-      prompt: 'How many beats do two eighth notes equal together?',
-      correctAnswer: '1 beat',
-      choices: shuffle(['0.5 beats', '1 beat', '1.5 beats', '2 beats']),
-    });
+      qs.push({
+        id: q.id,
+        prompt: q.prompt,
+        correctAnswer: q.answer,
+        choices,
+      });
+    }
 
-    // Question 7: Subdivision concept
-    questions.push({
-      id: 'q7',
-      prompt: 'An eighth note is created by subdividing what larger note value?',
-      correctAnswer: 'Quarter note',
-      choices: shuffle(['Whole note', 'Half note', 'Quarter note', 'Sixteenth note']),
-    });
-
-    // Question 8: "And" counting explanation
-    questions.push({
-      id: 'q8',
-      prompt: 'In the counting pattern "1-and-2-and-3-and-4-and," the "and" represents which beat?',
-      correctAnswer: 'The second eighth note of each beat',
-      choices: shuffle([
-        'The whole beat',
-        'The first eighth note of each beat',
-        'The second eighth note of each beat',
-        'A rest',
-      ]),
-    });
-
-    return questions;
+    return qs;
   }
 
   let quizQuestions = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(7, score, total, 0);
+    progress.saveQuizScore(6, score, total, 0);
   }
 
   function startQuiz() {
     quizQuestions = generateQuestions();
     showQuiz = true;
   }
+
+  // G major scale notes
+  const gMajorNotes = ['G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F#5', 'G5'];
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: Subdividing the Beat -->
+  <!-- Section 1: Rest Symbols -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Subdividing the Beat</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Rest Symbols</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      So far, you've learned whole notes, half notes, and quarter notes. But music can move faster! An <strong>eighth note</strong> is created by subdividing a beat into two smaller parts.
+      Just like notes tell you what to <em>play</em>, rests tell you to be <em>silent</em> for a certain number of beats. Rests come in different shapes, just like notes, and each shape means a different duration.
     </p>
+
+    <div class="grid grid-cols-3 gap-6 mb-6">
+      <!-- Whole rest -->
+      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] text-center">
+        <div class="mb-4 flex justify-center h-16">
+          <svg viewBox="0 0 100 80" width="80" height="80">
+            <line x1="20" y1="40" x2="80" y2="40" stroke="black" stroke-width="1.5" />
+            <line x1="20" y1="60" x2="80" y2="60" stroke="black" stroke-width="1.5" />
+            <line x1="20" y1="80" x2="80" y2="80" stroke="black" stroke-width="1.5" />
+            <!-- Whole rest hanging below line 2 -->
+            <rect x="40" y="45" width="20" height="10" fill="black" />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-2">Whole Rest</p>
+        <p class="text-sm text-[#666]"><strong>4 beats</strong> of silence</p>
+        <p class="text-xs text-[#999] mt-2">Hangs below a line</p>
+      </div>
+
+      <!-- Half rest -->
+      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] text-center">
+        <div class="mb-4 flex justify-center h-16">
+          <svg viewBox="0 0 100 80" width="80" height="80">
+            <line x1="20" y1="40" x2="80" y2="40" stroke="black" stroke-width="1.5" />
+            <line x1="20" y1="60" x2="80" y2="60" stroke="black" stroke-width="1.5" />
+            <line x1="20" y1="80" x2="80" y2="80" stroke="black" stroke-width="1.5" />
+            <!-- Half rest sitting on line 3 -->
+            <rect x="40" y="35" width="20" height="10" fill="black" />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-2">Half Rest</p>
+        <p class="text-sm text-[#666]"><strong>2 beats</strong> of silence</p>
+        <p class="text-xs text-[#999] mt-2">Sits on a line</p>
+      </div>
+
+      <!-- Quarter rest -->
+      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] text-center">
+        <div class="mb-4 flex justify-center h-16">
+          <svg viewBox="0 0 100 80" width="80" height="80">
+            <line x1="20" y1="40" x2="80" y2="40" stroke="black" stroke-width="1.5" />
+            <line x1="20" y1="60" x2="80" y2="60" stroke="black" stroke-width="1.5" />
+            <line x1="20" y1="80" x2="80" y2="80" stroke="black" stroke-width="1.5" />
+            <!-- Quarter rest - simplified zigzag -->
+            <polyline
+              points="50,30 55,40 45,50 55,60 50,70"
+              stroke="black"
+              stroke-width="2"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-2">Quarter Rest</p>
+        <p class="text-sm text-[#666]"><strong>1 beat</strong> of silence</p>
+        <p class="text-xs text-[#999] mt-2">A squiggly line</p>
+      </div>
+    </div>
+
+    <p class="text-[#444] leading-[1.7] text-sm bg-[#fef3ee] border-l-4 border-purple px-4 py-3 rounded">
+      💡 <strong>Memory tip:</strong> Rests work just like notes — the same duration rules apply. A whole rest = 4 beats, a half rest = 2 beats, a quarter rest = 1 beat. Use silence like you use notes!
+    </p>
+  </section>
+
+  <!-- Section 2: The G Major Scale -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The G Major Scale</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Think of it like this: if a <strong>quarter note = 1 beat</strong>, then:
+      Now that you've mastered the C major scale, let's learn a new one: <strong>G major</strong>. It has the same interval pattern as C major (whole, whole, half, whole, whole, whole, half), but it starts on a different note: <strong>G</strong>.
     </p>
-    <ul class="text-[#444] leading-[1.7] space-y-2 ml-6 mb-6">
-      <li>• <strong>Two eighth notes = 1 beat</strong></li>
-      <li>• <strong>One eighth note = 0.5 beats (half a beat)</strong></li>
-      <li>• <strong>Four eighth notes = 2 beats</strong></li>
-    </ul>
+
     <p class="text-[#444] leading-[1.7] mb-4">
-      When you count eighth notes, you use the pattern <strong>"1-and-2-and-3-and-4-and"</strong>. The numbers (1, 2, 3, 4) represent the main beats, and the "and"s fill in the gaps with the second half of each beat. This is called <strong>subdividing</strong> the beat.
+      <strong>G A B C D E F# G</strong> — Notice something new? The 7th note is <strong>F#</strong> (F sharp), not F natural. This is the <strong>key signature of G major</strong>.
     </p>
-    <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4 mt-6">
-      <p class="text-sm text-[#444]">
-        <strong>💡 Memory tip:</strong> The symbol for an eighth note looks like a quarter note with a flag or hook at the top. When eighth notes appear together, the flags connect into a beam (e.g., ♫).
+
+    <!-- G Major notes on keyboard -->
+    <div class="bg-[#faf9f5] rounded-lg p-6 border border-[#dad9d4] mb-6">
+      <p class="text-sm font-semibold text-navy mb-4">G Major Scale — Press play or click the keys:</p>
+      <VirtualKeyboard startOctave={3} endOctave={5} highlightKeys={gMajorNotes} showLabels={true} />
+    </div>
+
+    <div class="space-y-3">
+      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
+        <p class="font-semibold text-navy mb-1">The One Sharp: F#</p>
+        <p class="text-sm text-[#666]">In G major, <strong>every F you see is played as F#</strong>. This sharp appears in the key signature (at the beginning of each staff), so you know to play all F's as sharps automatically.</p>
+      </div>
+      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
+        <p class="font-semibold text-navy mb-1">Why G Major?</p>
+        <p class="text-sm text-[#666]">G major is the first scale with a sharp. Many famous pieces are written in G major because it sounds bright and warm on the piano.</p>
+      </div>
+    </div>
+
+    <!-- G Major Fingering -->
+    <div class="mt-6 bg-white rounded-lg p-5 border border-[#e8e6e0]">
+      <p class="font-semibold text-navy mb-3">G Major Scale Fingering</p>
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <p class="font-semibold text-navy mb-2">Right Hand (Ascending)</p>
+          <p class="text-sm text-[#444] leading-relaxed font-mono mb-2">
+            <strong>G–A–B–C–D–E–F#–G</strong><br />
+            <strong>1–2–3–1–2–3–4–5</strong>
+          </p>
+          <p class="text-xs text-[#666]">Same thumb-under pattern as C major</p>
+        </div>
+        <div>
+          <p class="font-semibold text-navy mb-2">Left Hand (Ascending)</p>
+          <p class="text-sm text-[#444] leading-relaxed font-mono mb-2">
+            <strong>G–A–B–C–D–E–F#–G</strong><br />
+            <strong>5–4–3–2–1–3–2–1</strong>
+          </p>
+          <p class="text-xs text-[#666]">Same finger-over pattern as C major</p>
+        </div>
+      </div>
+      <p class="text-sm text-[#444] leading-relaxed mt-4">
+        Notice that F# (the new sharp in this scale) is played by <strong>finger 4 (right hand)</strong> and <strong>finger 2 (left hand)</strong>. The fingering stays consistent even though the note is different from C major — that's the power of understanding hand position!
       </p>
     </div>
   </section>
 
-  <!-- Section 2: Note Duration Chart -->
+  <!-- Section 3: F Sharp in Context -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Note Duration Chart</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">F Sharp — Your First Accidental</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Here's how all the note durations compare:
+      An <strong>accidental</strong> is a symbol that modifies a natural note. We've seen the sharp symbol (♯) before, but now you're encountering it in an actual musical context. In the key of G major, F# appears in the key signature, so it's "built in" — you don't need to learn to read an accidental symbol separately.
     </p>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <!-- Whole note -->
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
-        <div class="mb-3 flex justify-center">
-          <svg viewBox="0 0 60 50" width="60" height="50">
-            <ellipse cx="30" cy="25" rx="16" ry="12" fill="none" stroke="#3d3929" stroke-width="2" />
-          </svg>
+    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0]">
+      <p class="font-semibold text-navy mb-3">F Natural vs. F#</p>
+      <div class="flex gap-8 justify-center mb-4">
+        <div class="text-center">
+          <p class="text-sm text-[#999] mb-2">F Natural (white key)</p>
+          <VirtualKeyboard startOctave={3} endOctave={4} highlightKeys={['F4']} showLabels={true} />
         </div>
-        <p class="font-bold text-navy mb-1 text-sm">Whole</p>
-        <p class="text-xs text-[#666]"><strong>4 beats</strong></p>
-      </div>
-
-      <!-- Half note -->
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
-        <div class="mb-3 flex justify-center">
-          <svg viewBox="0 0 60 50" width="60" height="50">
-            <ellipse cx="22" cy="32" rx="14" ry="11" fill="none" stroke="#3d3929" stroke-width="1.5" />
-            <line x1="36" y1="32" x2="36" y2="8" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <p class="font-bold text-navy mb-1 text-sm">Half</p>
-        <p class="text-xs text-[#666]"><strong>2 beats</strong></p>
-      </div>
-
-      <!-- Quarter note -->
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
-        <div class="mb-3 flex justify-center">
-          <svg viewBox="0 0 60 50" width="60" height="50">
-            <ellipse cx="22" cy="32" rx="14" ry="11" fill="#3d3929" />
-            <line x1="36" y1="32" x2="36" y2="8" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <p class="font-bold text-navy mb-1 text-sm">Quarter</p>
-        <p class="text-xs text-[#666]"><strong>1 beat</strong></p>
-      </div>
-
-      <!-- Eighth note -->
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
-        <div class="mb-3 flex justify-center">
-          <svg viewBox="0 0 60 50" width="60" height="50">
-            <ellipse cx="20" cy="32" rx="13" ry="10" fill="#3d3929" />
-            <line x1="33" y1="32" x2="33" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <path d="M 33 8 Q 45 12 40 20" fill="none" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <p class="font-bold text-navy mb-1 text-sm">Eighth</p>
-        <p class="text-xs text-[#666]"><strong>0.5 beats</strong></p>
-      </div>
-    </div>
-
-    <div class="mt-6 bg-white rounded-lg p-5 border border-[#e8e6e0]">
-      <p class="text-sm font-semibold text-navy mb-3">Visual comparison: one measure of 4/4 time</p>
-      <div class="space-y-3 text-sm">
-        <div class="flex items-center gap-4">
-          <span class="text-[#666] w-24">1 whole note:</span>
-          <svg viewBox="0 0 200 40" width="200" height="40">
-            <ellipse cx="100" cy="20" rx="18" ry="13" fill="none" stroke="#3d3929" stroke-width="2" />
-          </svg>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-[#666] w-24">2 half notes:</span>
-          <svg viewBox="0 0 200 40" width="200" height="40">
-            <ellipse cx="40" cy="25" rx="14" ry="10" fill="none" stroke="#3d3929" stroke-width="1.5" />
-            <line x1="54" y1="25" x2="54" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="130" cy="25" rx="14" ry="10" fill="none" stroke="#3d3929" stroke-width="1.5" />
-            <line x1="144" y1="25" x2="144" y2="8" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-[#666] w-24">4 quarter notes:</span>
-          <svg viewBox="0 0 200 40" width="200" height="40">
-            <ellipse cx="25" cy="25" rx="12" ry="9" fill="#3d3929" />
-            <line x1="37" y1="25" x2="37" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="65" cy="25" rx="12" ry="9" fill="#3d3929" />
-            <line x1="77" y1="25" x2="77" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="105" cy="25" rx="12" ry="9" fill="#3d3929" />
-            <line x1="117" y1="25" x2="117" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="145" cy="25" rx="12" ry="9" fill="#3d3929" />
-            <line x1="157" y1="25" x2="157" y2="8" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-[#666] w-24">8 eighth notes:</span>
-          <svg viewBox="0 0 200 40" width="200" height="40">
-            <ellipse cx="15" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="26" y1="25" x2="26" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="33" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="44" y1="25" x2="44" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="51" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="62" y1="25" x2="62" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="69" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="80" y1="25" x2="80" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="87" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="98" y1="25" x2="98" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="105" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="116" y1="25" x2="116" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="123" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="134" y1="25" x2="134" y2="8" stroke="#3d3929" stroke-width="1.5" />
-            <ellipse cx="141" cy="25" rx="11" ry="8" fill="#3d3929" />
-            <line x1="152" y1="25" x2="152" y2="8" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
+        <div class="text-center">
+          <p class="text-sm text-[#999] mb-2">F# (black key)</p>
+          <VirtualKeyboard startOctave={3} endOctave={4} highlightKeys={['F#4']} showLabels={true} />
         </div>
       </div>
+      <p class="text-sm text-[#666] text-center">F# is the black key between F and G. In G major, you'll play this black key every time you see an F.</p>
     </div>
   </section>
 
-  <!-- Section 3: Rhythm Practice -->
+  <!-- Section 4: Simple Waltz -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Rhythm Practice</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Simple Waltz in 3/4 Time</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Let's practice tapping along to a rhythm pattern with eighth notes. Listen to the metronome and tap when you hear the beats. The pattern below uses a mix of quarter notes and eighth notes at a comfortable pace of 80 BPM.
+      Here's a beautiful short piece in 3/4 time (waltz time: 1-2-3, 1-2-3) using the G major scale and F#. This piece is shorter and simpler than Kushi, so it's a great next step in your journey.
     </p>
-    <p class="text-[#444] leading-[1.7] mb-4 text-sm">
-      <strong>Pattern:</strong> Q Q E E Q Q E E Q (where Q = quarter note, E = eighth note)
-    </p>
-    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-      <RhythmTrainer pattern={[1, 1, 0.5, 0.5, 1, 1, 0.5, 0.5, 1]} bpm={80} />
-    </div>
-  </section>
 
-  <!-- Section 4: Try a Harder Pattern -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Try a Harder Pattern</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Ready for a challenge? Here's a trickier rhythm with more eighth notes. The tempo is also slightly faster at 90 BPM. Pay attention to the counting and try to stay with the beat!
-    </p>
-    <p class="text-[#444] leading-[1.7] mb-4 text-sm">
-      <strong>Pattern:</strong> E E Q E E E E Q Q (more eighth notes, less predictable)
-    </p>
-    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-      <RhythmTrainer pattern={[0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 1]} bpm={90} />
+    {#if waltz}
+      {#each waltz.lines as line, lineIdx}
+        <div class="mb-6">
+          <p class="text-sm text-[#999] mb-2">Line {lineIdx + 1}</p>
+          <SongStaff notes={line} {highlightIndex} />
+        </div>
+      {/each}
+
+      <!-- Play button -->
+      <button
+        class="bg-purple text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity mb-6"
+        onclick={playMelody}
+      >
+        {isPlaying ? 'Stop Playback' : 'Play Waltz'}
+      </button>
+
+      <!-- Note sequence -->
+      <div class="mb-6">
+        <p class="text-sm font-semibold text-navy mb-2">Note sequence:</p>
+        <p class="text-[#666] text-sm font-mono bg-white px-4 py-2 rounded border border-[#e8e6e0]">
+          {waltz.lines.flat().join(' → ')}
+        </p>
+      </div>
+    {/if}
+
+    <!-- Metronome for 3/4 time -->
+    <div class="mt-8">
+      <p class="text-sm font-semibold text-navy mb-3">Practice with a waltz tempo (3/4 time):</p>
+      <Metronome initialBpm={waltz?.bpm || 108} />
     </div>
   </section>
 
@@ -277,14 +360,12 @@
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Now that you understand eighth notes and subdivision, let's test your knowledge with a quick quiz!
+        Ready to test what you've learned? Answer questions about rests, the G major scale, and sharps. You've got this!
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
         onclick={startQuiz}
-      >
-        Start Quiz
-      </button>
+      >Start Quiz</button>
     {:else}
       <QuizEngine questions={quizQuestions} onComplete={onQuizComplete} />
     {/if}

@@ -1,23 +1,17 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
   import ChordDiagram from '../components/ChordDiagram.svelte';
-  import EarTraining from '../components/EarTraining.svelte';
-  import SongStaff from '../components/SongStaff.svelte';
+  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
-  import { getSongsByLesson } from '../data/songs';
-  import { playChord, playSequence } from '../stores/audio';
+  import { playChord } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
-  import { getNoteById } from '../data/notes';
 
   const lesson = getLessonById(11)!;
-  const songs = getSongsByLesson(11);
-  const song = songs[0]; // When the Saints
 
   let showQuiz = $state(false);
-  let isPlayingProgression = $state(false);
-  let highlightedChord = $state<number | null>(null);
+  let activeChord = $state<string | null>(null);
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -28,105 +22,85 @@
     return a;
   }
 
-  // Play the I-IV-V-I progression
-  function playProgression(chords: Array<[string, number]>) {
-    if (isPlayingProgression) return;
-    isPlayingProgression = true;
-
-    const offsets: Record<string, number> = {
-      C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
-    };
-
-    let delay = 0;
-    chords.forEach((chord, idx) => {
-      const [root] = chord;
-      const rootOff = offsets[root] ?? 0;
-      const thirdOff = (rootOff + 4) % 12;
-      const fifthOff = (rootOff + 7) % 12;
-
-      const rootMidi = 60 + rootOff;
-      const thirdMidi = 60 + thirdOff;
-      const fifthMidi = 60 + fifthOff;
-
-      setTimeout(() => {
-        highlightedChord = idx;
-        playChord([rootMidi, thirdMidi, fifthMidi], 1, 0.7);
-      }, delay);
-
-      delay += 1000;
-    });
-
-    setTimeout(() => {
-      isPlayingProgression = false;
-      highlightedChord = null;
-    }, delay);
-  }
-
   function generateQuestions(): QuizQuestion[] {
     const questions: QuizQuestion[] = [];
+    const chordRoots = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const semitones = [3, 4, 7];
 
-    // Q1: What chord is IV in C major?
-    questions.push({
-      id: 'q1',
-      prompt: 'In C major, what chord is the IV (subdominant)?',
-      correctAnswer: 'F major',
-      choices: shuffle(['F major', 'G major', 'A minor', 'E minor']),
+    // Q1-3: "What notes make up X major chord?"
+    ['C', 'F', 'G'].forEach((root, i) => {
+      const offsets: Record<string, number> = {
+        C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+      };
+      const rootOff = offsets[root] ?? 0;
+      const thirdNote = Object.entries(offsets).find(([_, v]) => v === (rootOff + 4) % 12)?.[0] || 'E';
+      const fifthNote = Object.entries(offsets).find(([_, v]) => v === (rootOff + 7) % 12)?.[0] || 'G';
+      const correct = `${root}, ${thirdNote}, ${fifthNote}`;
+      const distractors = [
+        `${root}, ${thirdNote}, ${Object.entries(offsets).find(([_, v]) => v === (rootOff + 6) % 12)?.[0] || 'F#'}`,
+        `${root}, ${Object.entries(offsets).find(([_, v]) => v === (rootOff + 3) % 12)?.[0] || 'D#'}, ${fifthNote}`,
+        `${thirdNote}, ${fifthNote}, ${root}`,
+      ];
+      questions.push({
+        id: `q${i + 1}`,
+        prompt: `What three notes make up a ${root} major chord?`,
+        correctAnswer: correct,
+        choices: shuffle([correct, ...distractors]),
+      });
     });
 
-    // Q2: What chord is V in C major?
-    questions.push({
-      id: 'q2',
-      prompt: 'In C major, what chord is the V (dominant)?',
-      correctAnswer: 'G major',
-      choices: shuffle(['G major', 'F major', 'B diminished', 'E minor']),
-    });
-
-    // Q3: What chord is I in C major?
-    questions.push({
-      id: 'q3',
-      prompt: 'In C major, what chord is the I (tonic)?',
-      correctAnswer: 'C major',
-      choices: shuffle(['C major', 'G major', 'F major', 'D minor']),
-    });
-
-    // Q4: What does Roman numeral V represent?
+    // Q4: Semitones in major third
     questions.push({
       id: 'q4',
-      prompt: 'What does the Roman numeral V represent in chord progressions?',
-      correctAnswer: 'dominant',
-      choices: shuffle(['dominant', 'tonic', 'subdominant', 'mediant']),
+      prompt: 'How many semitones is a major third?',
+      correctAnswer: '4',
+      choices: shuffle(['4', '3', '5', '6']),
     });
 
-    // Q5: What does Roman numeral I represent?
+    // Q5: Semitones in perfect fifth
     questions.push({
       id: 'q5',
-      prompt: 'What does the Roman numeral I represent?',
-      correctAnswer: 'tonic',
-      choices: shuffle(['tonic', 'dominant', 'subdominant', 'relative minor']),
+      prompt: 'How many semitones is a perfect fifth?',
+      correctAnswer: '7',
+      choices: shuffle(['7', '6', '8', '5']),
     });
 
-    // Q6: Most common Western progression
+    // Q6-8: What is the fifth/third of X?
     questions.push({
       id: 'q6',
-      prompt: 'What is the most common chord progression in Western music?',
-      correctAnswer: 'I-IV-V-I',
-      choices: shuffle(['I-IV-V-I', 'I-V-I', 'I-ii-IV-V', 'vi-IV-I-V']),
+      prompt: 'What is the fifth of C?',
+      correctAnswer: 'G',
+      choices: shuffle(['G', 'E', 'B', 'F']),
     });
 
-    // Q7: Pop progression (I-V-vi-IV)
     questions.push({
       id: 'q7',
-      prompt: 'What is the modern pop progression that uses vi-IV-I-V?',
-      correctAnswer: 'vi-IV-I-V',
-      choices: shuffle(['vi-IV-I-V', 'I-IV-V-I', 'I-V-vi-IV', 'ii-V-I']),
+      prompt: 'What is the major third of F?',
+      correctAnswer: 'A',
+      choices: shuffle(['A', 'G', 'B', 'C']),
     });
 
-    // Q8: Blues progression
     questions.push({
       id: 'q8',
-      prompt: 'What is the classic 12-bar blues progression?',
-      correctAnswer: 'I-IV-V',
-      choices: shuffle(['I-IV-V', 'I-V-I', 'vi-IV-I-V', 'I-vi-IV-V']),
+      prompt: 'What is the fifth of G?',
+      correctAnswer: 'D',
+      choices: shuffle(['D', 'B', 'E', 'C']),
+    });
+
+    // Q9: Identify chord from note list
+    questions.push({
+      id: 'q9',
+      prompt: 'Which chord is made from C, E, and G?',
+      correctAnswer: 'C major',
+      choices: shuffle(['C major', 'E major', 'G major', 'F major']),
+    });
+
+    // Q10: Pattern of major triad
+    questions.push({
+      id: 'q10',
+      prompt: 'What is the interval pattern for a major triad (root, third, fifth)?',
+      correctAnswer: '0, 4, 7 semitones',
+      choices: shuffle(['0, 4, 7 semitones', '0, 3, 7 semitones', '0, 4, 8 semitones', '0, 3, 6 semitones']),
     });
 
     return questions;
@@ -135,155 +109,165 @@
   let quizData = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(11, score, total, 0);
+    progress.saveQuizScore(10, score, total, 0);
   }
 
   function startQuiz() {
     quizData = generateQuestions();
     showQuiz = true;
   }
+
+  function playChordDemo(root: string) {
+    const offsets: Record<string, number> = {
+      C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+    };
+    const rootOff = offsets[root] ?? 0;
+    const thirdOff = (rootOff + 4) % 12;
+    const fifthOff = (rootOff + 7) % 12;
+
+    // MIDI notes for octave 4
+    const rootMidi = 60 + rootOff;
+    const thirdMidi = 60 + thirdOff;
+    const fifthMidi = 60 + fifthOff;
+
+    playChord([rootMidi, thirdMidi, fifthMidi], 1, 0.7);
+    activeChord = root;
+    setTimeout(() => { activeChord = null; }, 500);
+  }
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: What is a Chord Progression -->
+  <!-- Section 1: What is a Chord -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is a Chord Progression?</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is a Chord?</h2>
     <p class="text-[#444] leading-[1.7] mb-3">
-      A <strong>chord progression</strong> is a <strong>sequence of chords played one after another</strong>. Instead of thinking about individual notes moving, think about the movement of harmony — how the chords change and flow.
+      A <strong>chord</strong> is what you get when you play <strong>3 or more notes at the same time</strong>. When you hear chords, you hear harmony — the vertical sound of multiple notes blending together.
+    </p>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      The simplest and most important chord type is the <strong>triad</strong> — exactly 3 notes: the <strong>root</strong> (the starting note), the <strong>third</strong> (4 or 3 semitones up), and the <strong>fifth</strong> (7 semitones up from the root).
     </p>
     <p class="text-[#444] leading-[1.7] mb-4">
-      To name chord progressions clearly and universally, musicians use <strong>Roman numeral notation</strong>:
+      Understanding the intervals between these notes is the key to building chords in any key:
     </p>
-    <div class="space-y-2 bg-white rounded-lg p-4 border-l-4 border-purple mb-4">
-      <p class="text-[#444]"><strong>I (tonic)</strong> — the home chord, built on the first scale degree</p>
-      <p class="text-[#444]"><strong>IV (subdominant)</strong> — built on the fourth scale degree</p>
-      <p class="text-[#444]"><strong>V (dominant)</strong> — built on the fifth scale degree</p>
-      <p class="text-[#444]"><strong>vi (relative minor)</strong> — built on the sixth scale degree</p>
+    <div class="space-y-2 bg-white rounded-lg p-4 border-l-4 border-purple">
+      <p class="text-[#444]"><strong>Major third:</strong> 4 semitones (sounds bright)</p>
+      <p class="text-[#444]"><strong>Minor third:</strong> 3 semitones (sounds softer)</p>
+      <p class="text-[#444]"><strong>Perfect fifth:</strong> 7 semitones (sounds complete)</p>
     </div>
-    <p class="text-[#444] leading-[1.7]">
-      In <strong>C major</strong>, these Roman numerals correspond to specific chords:
-      <strong>I = C major, IV = F major, V = G major, vi = A minor</strong>.
-    </p>
   </section>
 
-  <!-- Section 2: The I-IV-V-I Progression -->
+  <!-- Section 2: Major Triads -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The I-IV-V-I Progression</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Major Triads</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      The <strong>I-IV-V-I progression</strong> is the most fundamental and recognizable chord progression in Western music. You've heard it thousands of times. It creates a journey:
+      A <strong>major triad</strong> = root + 4 semitones (major third) + 7 semitones (perfect fifth). The pattern is the same for every major chord. Click or hover over any chord to hear it:
     </p>
-    <ul class="text-[#444] text-sm space-y-2 mb-6 pl-5 list-disc">
-      <li><strong>I (C)</strong> — home (tonic), stable and grounded</li>
-      <li><strong>IV (F)</strong> — movement away (subdominant), opens a new color</li>
-      <li><strong>V (G)</strong> — tension (dominant), wants to resolve back home</li>
-      <li><strong>I (C)</strong> — resolution, returns to home and closure</li>
-    </ul>
-    <p class="text-[#444] leading-[1.7] mb-6">
-      Click the button below to hear this progression:
-    </p>
-    <div class="flex gap-3 items-center mb-6">
-      <button
-        class="bg-navy text-white px-6 py-2 rounded-lg text-[0.95rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity disabled:opacity-50"
-        onclick={() => playProgression([['C', 1], ['F', 1], ['G', 1], ['C', 1]])}
-        disabled={isPlayingProgression}
-      >
-        {isPlayingProgression ? 'Playing...' : 'Play Progression'}
-      </button>
-    </div>
-
-    <div class="flex gap-4 mb-6 flex-wrap justify-center">
-      {#each ['C', 'F', 'G', 'C'] as root, idx}
-        <div
-          style="opacity: {highlightedChord === idx ? 1 : 0.6}; transition: opacity 0.2s;"
+    <div class="flex gap-6 mb-6 flex-wrap justify-center">
+      {#each ['C', 'F', 'G'] as root}
+        <button
+          style="cursor: pointer; transition: transform 0.2s; background: none; border: none; padding: 0;"
+          onclick={() => playChordDemo(root)}
+          onfocus={() => { activeChord = root; }}
+          onblur={() => { activeChord = null; }}
+          onmouseover={() => { activeChord = root; }}
+          onmouseout={() => { activeChord = null; }}
+          aria-label="Play {root} major chord"
         >
-          <ChordDiagram {root} octave={4} showLabels={true} interactive={false} />
-        </div>
+          <ChordDiagram {root} octave={4} showLabels={true} interactive={true} />
+        </button>
       {/each}
     </div>
-
-    <p class="text-[#444] leading-[1.7] text-sm mb-3">
-      <strong>Musicians call this progression the "pop progression" because it works everywhere:</strong>
+    <p class="text-[#444] leading-[1.7]">
+      Notice how the <strong>root note is at the bottom</strong> (the fundamental), and the chord expands upward with the third and fifth. This is the foundation of harmonic thinking in music.
     </p>
-    <ul class="text-[#444] text-sm space-y-1 pl-5 list-disc">
-      <li>Blues & rock music</li>
-      <li>Country songs</li>
-      <li>Pop ballads</li>
-      <li>Gospel hymns</li>
-    </ul>
   </section>
 
-  <!-- Section 3: Common Progressions -->
+  <!-- Section 3: Building from Any Root -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Common Progressions in Music</h2>
-    <div class="space-y-4">
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">I-V-vi-IV (Modern Pop)</p>
-        <p class="text-sm text-[#666] mb-3">
-          Extremely popular in contemporary pop, hip-hop, and R&B. Creates an accessible, relatable emotional arc.
-        </p>
-        <div class="flex gap-3 flex-wrap">
-          {#each ['C', 'G', 'A', 'F'] as root}
-            <div>
-              <ChordDiagram {root} octave={4} showLabels={true} interactive={false} quality={root === 'A' ? 'minor' : 'major'} />
-            </div>
-          {/each}
-        </div>
-      </div>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Building from Any Root</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Because the interval pattern (4 + 3 semitones) is the same, you can build a major chord from <strong>any starting note</strong>. The skill is learning to count up the right number of semitones:
+    </p>
+    <div class="flex gap-6 mb-6 flex-wrap justify-center">
+      {#each ['D', 'E', 'A'] as root}
+        <button
+          style="cursor: pointer; transition: transform 0.2s; background: none; border: none; padding: 0;"
+          onclick={() => playChordDemo(root)}
+          onfocus={() => { activeChord = root; }}
+          onblur={() => { activeChord = null; }}
+          onmouseover={() => { activeChord = root; }}
+          onmouseout={() => { activeChord = null; }}
+          aria-label="Play {root} major chord"
+        >
+          <ChordDiagram {root} octave={4} showLabels={true} interactive={true} />
+        </button>
+      {/each}
+    </div>
+    <p class="text-[#444] leading-[1.7] text-sm mb-3">
+      <strong>How to build any major chord:</strong>
+    </p>
+    <ol class="text-[#444] text-sm space-y-1 mb-4 pl-5">
+      <li>1. Start with your root note</li>
+      <li>2. Count up 4 semitones to find the third</li>
+      <li>3. Count up 3 more semitones to find the fifth</li>
+      <li>4. Play all three notes together</li>
+    </ol>
+  </section>
 
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">I-IV-V (Blues Progression)</p>
-        <p class="text-sm text-[#666] mb-3">
-          The foundation of blues, rock, and country music. Simple but powerful.
-        </p>
-        <div class="flex gap-3 flex-wrap">
-          {#each ['C', 'F', 'G'] as root}
-            <div>
-              <ChordDiagram {root} octave={4} showLabels={true} interactive={false} />
-            </div>
-          {/each}
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">vi-IV-I-V (Emotional Progression)</p>
-        <p class="text-sm text-[#666] mb-3">
-          Starts in relative minor, creating a melancholic or introspective feel before resolving to major.
-        </p>
-        <div class="flex gap-3 flex-wrap">
-          {#each [{ root: 'A', q: 'minor' }, { root: 'F', q: 'major' }, { root: 'C', q: 'major' }, { root: 'G', q: 'major' }] as item}
-            <div>
-              <ChordDiagram root={item.root} octave={4} showLabels={true} interactive={false} quality={item.q} />
-            </div>
-          {/each}
-        </div>
-      </div>
+  <!-- Section 4: Try Playing Chords -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Try Playing Chords</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Use this virtual keyboard to play the C, F, and G major chords with your mouse. Try playing them separately, then try playing them in sequence to hear how they flow together:
+    </p>
+    <div class="mb-4 bg-white rounded-lg p-4">
+      <VirtualKeyboard startOctave={3} endOctave={5} showLabels={true} />
+    </div>
+    <div class="space-y-2 text-sm text-[#666] bg-blue-50 rounded-lg p-3 border-l-4 border-blue-400">
+      <p><strong>C major chord:</strong> C (middle) + E + G</p>
+      <p><strong>F major chord:</strong> F + A + C</p>
+      <p><strong>G major chord:</strong> G + B + D</p>
     </div>
   </section>
 
-  <!-- Section 4: Play a Song with Chords -->
-  {#if song}
-    <section class="mb-10">
-      <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">When the Saints Go Marching In</h2>
-      <p class="text-[#444] leading-[1.7] mb-4">
-        Here's a real piece that uses I-IV-V chord progressions. Listen to the song, then try playing the chords along with the melody:
-      </p>
-      <div class="mb-4 bg-white rounded-lg p-4">
-        {#each song.lines as line, i}
-          <div class="mb-2">
-            <SongStaff notes={line} />
-          </div>
-        {/each}
-      </div>
-    </section>
-  {/if}
-
-  <!-- Section 5: Ear Training -->
+  <!-- Section 5: Chord Fingering -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Ear Training: Recognize Chord Progressions</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Standard Chord Fingering</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Train your ear to recognize these progressions by sound. Listen to each sequence and identify which progression it is:
+      Now that you know which notes make up a chord, you need to know which fingers to use. The good news: there's a simple, universal pattern for playing triads in root position.
     </p>
-    <EarTraining mode="chord" />
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-5 mb-4">
+      <p class="text-[#444] mb-3"><strong>Standard triad fingering: 1-3-5</strong></p>
+      <p class="text-[#444] text-sm leading-[1.7]">
+        For triads in root position, use <strong>fingers 1 (thumb), 3 (middle), and 5 (pinky)</strong> — one finger per note. This works in both hands:
+      </p>
+      <ul class="text-[#444] text-sm space-y-2 mt-3 pl-5 list-disc">
+        <li><strong>Right hand:</strong> Fingers 1-3-5 play root, third, fifth (ascending)</li>
+        <li><strong>Left hand:</strong> Fingers 5-3-1 play root, third, fifth (descending — mirror image)</li>
+      </ul>
+    </div>
+    <div class="space-y-3 mb-4">
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+        <p class="font-semibold text-navy mb-2">C Major Chord</p>
+        <p class="text-sm text-[#666] mb-2"><strong>Right hand:</strong> 1(C) - 3(E) - 5(G)</p>
+        <p class="text-sm text-[#666]"><strong>Left hand:</strong> 5(C) - 3(E) - 1(G)</p>
+      </div>
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+        <p class="font-semibold text-navy mb-2">F Major Chord</p>
+        <p class="text-sm text-[#666] mb-2"><strong>Right hand:</strong> 1(F) - 3(A) - 5(C)</p>
+        <p class="text-sm text-[#666]"><strong>Left hand:</strong> 5(F) - 3(A) - 1(C)</p>
+      </div>
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+        <p class="font-semibold text-navy mb-2">G Major Chord</p>
+        <p class="text-sm text-[#666] mb-2"><strong>Right hand:</strong> 1(G) - 3(B) - 5(D)</p>
+        <p class="text-sm text-[#666]"><strong>Left hand:</strong> 5(G) - 3(B) - 1(D)</p>
+      </div>
+    </div>
+    <div class="bg-blue-50 rounded-lg border-l-4 border-blue-400 p-4">
+      <p class="text-sm text-[#444]">
+        <strong>Tip:</strong> The 1-3-5 fingering works for almost every root-position triad you'll encounter. Once you learn this pattern, your fingers will find the right notes automatically.
+      </p>
+    </div>
   </section>
 
   <!-- Section 6: Quiz -->
@@ -291,7 +275,7 @@
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test your understanding of chord progressions and Roman numeral notation?
+        Ready to test your understanding of chords and intervals? This quiz covers chord building, interval counting, and chord identification.
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"

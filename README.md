@@ -1,38 +1,61 @@
 # Klavier
 
-A music note reading quiz app to practise identifying notes on the treble clef stave.
+A free, browser-based piano learning app. 18 interactive lessons covering music theory, keyboard skills, rhythm, chords, sight-reading, and expression — all running locally in your browser with no account required.
+
+## Features
+
+- 18 structured lessons across 6 modules (beginner to intermediate)
+- Interactive virtual keyboard with keyboard shortcut support
+- Music theory quizzes with instant feedback
+- 10 playable songs with staff notation
+- Metronome, rhythm trainer, ear training, and sight-reading exercises
+- Progress tracking with streaks (stored locally, GDPR-compliant)
+- Fully accessible: keyboard navigation, screen reader support, skip links, focus management
+
+## Tech Stack
+
+- Svelte 5 (runes syntax), Vite 6, TypeScript, Tailwind CSS v4
+- Web Audio API piano synth (no external audio libraries)
+- Vitest for testing
+- Deployed on Vercel
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
 - npm v9+
 
-## Install
+## Getting Started
 
 ```bash
 npm install
-```
-
-## Run (development)
-
-```bash
 npm run dev
 ```
 
 Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Build (production)
+## Scripts
 
 ```bash
-npm run build
+npm run dev        # Vite dev server
+npm run build      # Production build → dist/
+npm run preview    # Preview production build locally
+npm run test       # Run tests once
+npm run test:watch # Run tests in watch mode
+npm run check      # TypeScript type-check
 ```
 
-The output is written to `dist/`. To preview the production build locally:
+## Project Structure
 
-```bash
-npm run preview
+```
+src/
+├── pages/          # Route pages (Home, Practice, Songs, Settings, Privacy, Terms)
+├── lessons/        # 18 lesson components (lazy-loaded)
+├── components/     # Shared UI (keyboard, staff, quiz engine, sidebar, etc.)
+├── stores/         # State management (progress, consent, audio, sidebar)
+├── data/           # Static data (lessons, notes, songs)
+└── __tests__/      # Vitest test files
 ```
 
-## How to play
+## License
 
-A note is shown on a treble clef stave. Select the correct letter name (A–G) from the four buttons. Your session score is tracked at the top of the page and resets on refresh.
+All rights reserved.

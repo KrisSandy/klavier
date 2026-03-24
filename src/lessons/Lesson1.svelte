@@ -124,7 +124,21 @@
     <VirtualKeyboard startOctave={3} endOctave={4} onNotePlay={handleNotePlay} showLabels={true} />
   </section>
 
-  <!-- Section 5: Quiz -->
+  <!-- Section 5: Preparing Your Hands -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Preparing Your Hands</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      Now that you can find notes, it's time to think about <em>which fingers</em> will play them. Every pianist uses a standard finger numbering system: <strong>1 = thumb, 2 = index, 3 = middle, 4 = ring, 5 = pinky</strong> — the same on both hands.
+    </p>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      For your very first position, place your right hand thumb (finger 1) on <strong>middle C</strong>. Let each finger rest on the next white key — so fingers 1 through 5 cover C, D, E, F, G. This is called <strong>C position</strong>, and it's where every beginner starts.
+    </p>
+    <p class="text-[#444] leading-[1.7]">
+      We'll explore finger numbers in depth in the next lesson. For now, just get comfortable finding notes — and notice how five fingers naturally cover five adjacent white keys.
+    </p>
+  </section>
+
+  <!-- Section 6: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}

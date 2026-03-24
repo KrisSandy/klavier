@@ -3,5 +3,10 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [tailwindcss(), svelte()]
+  plugins: [tailwindcss(), svelte()],
+  test: {
+    environment: 'jsdom',
+    include: ['src/__tests__/**/*.test.ts'],
+    globals: true,
+  },
 });

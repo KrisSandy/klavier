@@ -42,6 +42,9 @@
   const bestTimeMs = $derived(history.length > 0 ? Math.min(...history.map(h => h.timeMs)) : 0);
   const worstTimeMs = $derived(history.length > 0 ? Math.max(...history.map(h => h.timeMs)) : 0);
 
+  // Live feedback message for screen readers
+  let feedbackMessage = $state('');
+
   function startTimer() {
     clearInterval(timerInterval);
     questionStart = Date.now();
@@ -57,15 +60,21 @@
     clearInterval(timerInterval);
     frozenMs = timeMs;
     selected = letter;
+    const isCorrect = letter === currentQuestion.correctAnswer;
     history = [
       ...history,
       {
         question: currentQuestion,
         selected: letter,
-        correct: letter === currentQuestion.correctAnswer,
+        correct: isCorrect,
         timeMs,
       },
     ];
+
+    // Announce result to screen readers
+    feedbackMessage = isCorrect
+      ? `Correct! ${letter} is the right answer.`
+      : `Incorrect. You chose ${letter}, the correct answer is ${currentQuestion.correctAnswer}.`;
 
     // Auto-advance after a short delay
     setTimeout(nextQuestion, 600);
@@ -75,11 +84,13 @@
     if (questionIndex + 1 >= questions.length) {
       finished = true;
       clearInterval(timerInterval);
+      feedbackMessage = `Quiz complete! You scored ${score} out of ${questions.length}.`;
       onComplete?.(score, questions.length, history);
       return;
     }
     questionIndex += 1;
     selected = null;
+    feedbackMessage = '';
     startTimer();
   }
 
@@ -148,16 +159,21 @@
     {/if}
 
     <!-- Answer buttons (2x2 grid) -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;" role="group" aria-label="Answer choices">
       {#each currentQuestion.choices as choice}
         <button
           class={getButtonStyle(buttonClass(choice))}
           onclick={() => handleAnswer(choice)}
+          aria-pressed={selected === choice ? 'true' : undefined}
+          disabled={selected !== null}
         >
           {choice}
         </button>
       {/each}
     </div>
+
+    <!-- Screen reader feedback -->
+    <div class="sr-only" aria-live="polite" aria-atomic="true">{feedbackMessage}</div>
 
   </div>
 {:else}

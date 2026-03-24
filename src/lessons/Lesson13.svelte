@@ -1,15 +1,22 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import SightReadingExercise from '../components/SightReadingExercise.svelte';
+  import ChordDiagram from '../components/ChordDiagram.svelte';
+  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
+  import EarTraining from '../components/EarTraining.svelte';
+  import SongStaff from '../components/SongStaff.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
-  import { TREBLE_NOTES } from '../data/notes';
   import { getLessonById } from '../data/lessons';
+  import { getSongsByLesson } from '../data/songs';
+  import { playChord } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(13)!;
+  const songs = getSongsByLesson(12);
+  const song = songs[0]; // Scarborough Fair
 
   let showQuiz = $state(false);
+  let highlightedScale = $state<string[]>([]);
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -20,73 +27,117 @@
     return a;
   }
 
-  // Easy pool: notes on the staff lines and spaces
-  const easyNotes = TREBLE_NOTES.filter(n => n.yPos >= 40 && n.yPos <= 120);
-  // Hard pool: includes ledger line notes
-  const allNotes = TREBLE_NOTES.filter(n => n.yPos >= 20 && n.yPos <= 150);
+  // Highlight A natural minor scale on keyboard
+  function showAMinorScale() {
+    highlightedScale = ['A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5', 'A5'];
+  }
 
-  let difficulty = $state<'easy' | 'hard'>('easy');
-  let speed = $state(4);
+  function playChordDemo(root: string, quality: 'major' | 'minor') {
+    const offsets: Record<string, number> = {
+      C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+    };
+    const rootOff = offsets[root] ?? 0;
+    const thirdInterval = quality === 'minor' ? 3 : 4;
+    const thirdOff = (rootOff + thirdInterval) % 12;
+    const fifthOff = (rootOff + 7) % 12;
 
-  const activePool = $derived(difficulty === 'easy' ? easyNotes : allNotes);
+    const rootMidi = 60 + rootOff;
+    const thirdMidi = 60 + thirdOff;
+    const fifthMidi = 60 + fifthOff;
+
+    playChord([rootMidi, thirdMidi, fifthMidi], 1, 0.7);
+  }
 
   function generateQuestions(): QuizQuestion[] {
-    return [
-      {
-        id: 'q1',
-        prompt: 'What is sight-reading?',
-        correctAnswer: 'Playing music you haven\'t seen before',
-        choices: shuffle(['Playing music you haven\'t seen before', 'Memorising a piece before playing', 'Reading lyrics while singing', 'Playing by ear']),
-      },
-      {
-        id: 'q2',
-        prompt: 'What is the most important habit for improving sight-reading?',
-        correctAnswer: 'Looking ahead while playing',
-        choices: shuffle(['Looking ahead while playing', 'Playing as fast as possible', 'Memorising every note', 'Practising scales only']),
-      },
-      {
-        id: 'q3',
-        prompt: 'When sight-reading, what should you do if you make a mistake?',
-        correctAnswer: 'Keep going and stay in time',
-        choices: shuffle(['Keep going and stay in time', 'Stop and start over', 'Go back and fix the mistake', 'Slow down dramatically']),
-      },
-      {
-        id: 'q4',
-        prompt: 'Before sight-reading a piece, what should you check first?',
-        correctAnswer: 'Time signature and key signature',
-        choices: shuffle(['Time signature and key signature', 'The title and composer', 'The last measure', 'The fingering numbers']),
-      },
-      {
-        id: 'q5',
-        prompt: 'Which strategy helps you read notes faster?',
-        correctAnswer: 'Recognising patterns like steps and skips',
-        choices: shuffle(['Recognising patterns like steps and skips', 'Naming each note individually', 'Playing very slowly', 'Closing your eyes']),
-      },
-      {
-        id: 'q6',
-        prompt: 'A "step" on the staff means the note moves to the...',
-        correctAnswer: 'next line or space (adjacent position)',
-        choices: shuffle(['next line or space (adjacent position)', 'same position', 'opposite end of the staff', 'nearest black key']),
-      },
-      {
-        id: 'q7',
-        prompt: 'A "skip" on the staff means the note moves...',
-        correctAnswer: 'over one line or space',
-        choices: shuffle(['over one line or space', 'to the same position', 'down an octave', 'to a black key']),
-      },
-      {
-        id: 'q8',
-        prompt: 'What does "reading ahead" mean in sight-reading?',
-        correctAnswer: 'Your eyes are on the next notes while your hands play the current ones',
-        choices: shuffle(['Your eyes are on the next notes while your hands play the current ones', 'Skipping difficult passages', 'Turning the page early', 'Playing the notes before you see them']),
-      },
-    ];
+    const questions: QuizQuestion[] = [];
+
+    // Q1: Semitones in minor third
+    questions.push({
+      id: 'q1',
+      prompt: 'How many semitones from root to third in a minor chord?',
+      correctAnswer: '3',
+      choices: shuffle(['3', '4', '5', '6']),
+    });
+
+    // Q2: What does minor sound like
+    questions.push({
+      id: 'q2',
+      prompt: 'What emotional quality does a minor chord typically convey?',
+      correctAnswer: 'sad, dark, introspective',
+      choices: shuffle(['sad, dark, introspective', 'happy, bright, cheerful', 'energetic, powerful, dominant', 'soft, gentle, delicate']),
+    });
+
+    // Q3: Difference between major and minor
+    questions.push({
+      id: 'q3',
+      prompt: 'What is the main difference between a major and minor triad?',
+      correctAnswer: 'the third interval (3 vs 4 semitones)',
+      choices: shuffle(['the third interval (3 vs 4 semitones)', 'the fifth interval', 'the root note', 'the number of notes']),
+    });
+
+    // Q4: What notes make up Am
+    questions.push({
+      id: 'q4',
+      prompt: 'What three notes make up an A minor chord?',
+      correctAnswer: 'A, C, E',
+      choices: shuffle(['A, C, E', 'A, C#, E', 'A, D, E', 'A, C, F']),
+    });
+
+    // Q5: What notes make up Dm
+    questions.push({
+      id: 'q5',
+      prompt: 'What three notes make up a D minor chord?',
+      correctAnswer: 'D, F, A',
+      choices: shuffle(['D, F, A', 'D, F#, A', 'D, G, A', 'D, E, A']),
+    });
+
+    // Q6: What notes make up Em
+    questions.push({
+      id: 'q6',
+      prompt: 'What three notes make up an E minor chord?',
+      correctAnswer: 'E, G, B',
+      choices: shuffle(['E, G, B', 'E, G#, B', 'E, F#, B', 'E, G, C']),
+    });
+
+    // Q7: Relative minor of C major
+    questions.push({
+      id: 'q7',
+      prompt: 'What is the relative minor of C major?',
+      correctAnswer: 'A minor',
+      choices: shuffle(['A minor', 'G minor', 'B minor', 'D minor']),
+    });
+
+    // Q8: What is A natural minor scale
+    questions.push({
+      id: 'q8',
+      prompt: 'What are the notes of the A natural minor scale?',
+      correctAnswer: 'A B C D E F G',
+      choices: shuffle(['A B C D E F G', 'A B C# D E F# G#', 'A B C D E F# G#', 'A B C D E F# G']),
+    });
+
+    // Q9: Identify chord by sound or description
+    questions.push({
+      id: 'q9',
+      prompt: 'Which chord sounds more "dark" or "sad"?',
+      correctAnswer: 'A minor',
+      choices: shuffle(['A minor', 'A major', 'C major', 'G major']),
+    });
+
+    // Q10: Major vs minor in same key
+    questions.push({
+      id: 'q10',
+      prompt: 'How many shared notes does C major (C E G) have with its relative minor (A C E)?',
+      correctAnswer: '2 notes (C and E)',
+      choices: shuffle(['2 notes (C and E)', '1 note (C)', '3 notes (all)', '0 notes (none)']),
+    });
+
+    return questions;
   }
 
   let quizData = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(13, score, total, 0);
+    progress.saveQuizScore(12, score, total, 0);
   }
 
   function startQuiz() {
@@ -96,107 +147,186 @@
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: What is Sight-Reading -->
+  <!-- Section 1: Major vs Minor -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is Sight-Reading?</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Major vs Minor</h2>
     <p class="text-[#444] leading-[1.7] mb-3">
-      Sight-reading is the ability to play a piece of music <strong>the first time you see it</strong>, without having practised it before. It's one of the most valuable skills a pianist can develop — it lets you learn new music quickly, play with other musicians, and enjoy a much wider range of music.
+      Listen to the difference between a major chord and a minor chord. They use the same root and fifth, but the <strong>third</strong> is different:
     </p>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      The key to good sight-reading is <strong>reading ahead</strong>. Your eyes should always be a beat or two ahead of your hands. Think of it like reading a book aloud — you don't look at each word as you say it, you glance ahead to keep the flow smooth.
-    </p>
-  </section>
-
-  <!-- Section 2: Steps and Skips -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Recognising Steps and Skips</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      Instead of reading every single note name, trained sight-readers see <strong>patterns</strong>. The two most fundamental patterns are:
-    </p>
-    <div class="grid grid-cols-2 gap-4 mb-4">
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-1">Step</p>
-        <p class="text-sm text-[#444]">The note moves to the <strong>next adjacent position</strong> on the staff — from a line to the next space, or a space to the next line. On the keyboard, this is the next white key (or next note in the scale).</p>
+    <div class="flex gap-8 mb-6 items-start">
+      <div class="flex-1">
+        <p class="font-semibold text-navy mb-2">C Major (C E G)</p>
+        <p class="text-sm text-[#666] mb-3">Bright, happy, complete</p>
+        <button
+          class="text-sm bg-white border-2 border-navy text-navy px-4 py-2 rounded-lg cursor-pointer hover:bg-navy hover:text-white transition-all"
+          onclick={() => playChordDemo('C', 'major')}
+        >Play C Major</button>
       </div>
-      <div class="bg-white rounded-lg p-4 border-l-4 border-navy">
-        <p class="font-semibold text-navy mb-1">Skip</p>
-        <p class="text-sm text-[#444]">The note <strong>jumps over</strong> one position — from line to line, or space to space. On the keyboard, this skips one white key.</p>
+      <div class="flex-1">
+        <p class="font-semibold text-navy mb-2">C Minor (C Eb G)</p>
+        <p class="text-sm text-[#666] mb-3">Dark, sad, introspective</p>
+        <button
+          class="text-sm bg-white border-2 border-navy text-navy px-4 py-2 rounded-lg cursor-pointer hover:bg-navy hover:text-white transition-all"
+          onclick={() => playChordDemo('C', 'minor')}
+        >Play C Minor</button>
       </div>
     </div>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      The only difference is <strong>one semitone</strong> — the third interval:
+    </p>
+    <ul class="text-[#444] text-sm space-y-1 pl-5 list-disc mb-4">
+      <li><strong>Major chord:</strong> 4 semitones from root to third (major third)</li>
+      <li><strong>Minor chord:</strong> 3 semitones from root to third (minor third)</li>
+      <li><strong>Both:</strong> 7 semitones from root to fifth (perfect fifth)</li>
+    </ul>
     <p class="text-[#444] leading-[1.7]">
-      Once you can instantly see "step up, step up, skip down, step up" you barely need to read individual note names. This is how experienced musicians read so quickly.
+      This single change creates a completely different emotional color. That's the power of understanding intervals!
     </p>
   </section>
 
-  <!-- Section 3: Tips -->
+  <!-- Section 2: Minor Triads -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Sight-Reading Tips</h2>
-    <div class="space-y-3">
-      <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold text-lg shrink-0">1</span>
-        <p class="text-[#444]"><strong>Scan before you play.</strong> Look at the key signature, time signature, and scan the whole piece for tricky spots.</p>
-      </div>
-      <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold text-lg shrink-0">2</span>
-        <p class="text-[#444]"><strong>Keep a steady tempo.</strong> It's better to play slowly and steadily than to rush and stumble.</p>
-      </div>
-      <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold text-lg shrink-0">3</span>
-        <p class="text-[#444]"><strong>Don't stop for mistakes.</strong> In sight-reading, keeping the rhythm going is more important than hitting every note.</p>
-      </div>
-      <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold text-lg shrink-0">4</span>
-        <p class="text-[#444]"><strong>Look for patterns.</strong> Steps, skips, repeated notes, scale fragments, chord shapes — they're everywhere.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Section 4: Practice Drill -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Sight-Reading Drill</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Minor Triads</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Notes will appear on the staff one at a time. Identify each note as fast as you can before the timer runs out. The faster you go, the better your sight-reading becomes.
+      The pattern for minor chords is always: <strong>root + 3 semitones (minor third) + 7 semitones (perfect fifth)</strong>. Here are three of the most common minor chords:
     </p>
-
-    <div class="flex gap-4 mb-4 items-center">
-      <div class="flex gap-2">
-        <button
-          class="px-3 py-1.5 rounded text-sm font-medium transition-all {difficulty === 'easy' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
-          onclick={() => difficulty = 'easy'}
-        >Staff Notes</button>
-        <button
-          class="px-3 py-1.5 rounded text-sm font-medium transition-all {difficulty === 'hard' ? 'bg-navy text-white' : 'bg-white text-navy border border-[#dad9d4] hover:border-purple'}"
-          onclick={() => difficulty = 'hard'}
-        >+ Ledger Lines</button>
-      </div>
-      <div class="flex gap-2 items-center">
-        <span class="text-sm text-[#666]">Speed:</span>
-        <button
-          class="px-3 py-1.5 rounded text-sm font-medium transition-all {speed === 5 ? 'bg-purple text-white' : 'bg-white text-navy border border-[#dad9d4]'}"
-          onclick={() => speed = 5}
-        >Slow</button>
-        <button
-          class="px-3 py-1.5 rounded text-sm font-medium transition-all {speed === 4 ? 'bg-purple text-white' : 'bg-white text-navy border border-[#dad9d4]'}"
-          onclick={() => speed = 4}
-        >Medium</button>
-        <button
-          class="px-3 py-1.5 rounded text-sm font-medium transition-all {speed === 2.5 ? 'bg-purple text-white' : 'bg-white text-navy border border-[#dad9d4]'}"
-          onclick={() => speed = 2.5}
-        >Fast</button>
-      </div>
+    <div class="flex gap-6 mb-6 flex-wrap justify-center">
+      {#each ['A', 'D', 'E'] as root}
+        <button onclick={() => playChordDemo(root, 'minor')} style="cursor: pointer; background: none; border: none; padding: 0;" aria-label="Play {root} minor chord">
+          <ChordDiagram {root} octave={4} quality="minor" showLabels={true} interactive={true} />
+        </button>
+      {/each}
     </div>
-
-    <div class="bg-white rounded-lg border border-[#e8e6e0] p-6">
-      <SightReadingExercise notePool={activePool} timePerNote={speed} />
+    <p class="text-[#444] leading-[1.7] text-sm mb-3">
+      <strong>Notice:</strong> The chord diagram shows only the white keys (natural notes) that make up each minor triad. These are the three notes you play together.
+    </p>
+    <div class="space-y-2 bg-white rounded-lg p-4 border-l-4 border-purple">
+      <p class="text-[#444]"><strong>A minor:</strong> A + C + E</p>
+      <p class="text-[#444]"><strong>D minor:</strong> D + F + A</p>
+      <p class="text-[#444]"><strong>E minor:</strong> E + G + B</p>
     </div>
   </section>
 
-  <!-- Section 5: Quiz -->
+  <!-- Section 3: Minor Chord Fingering -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Minor Chord Fingering</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      The great news: minor triads use exactly the same 1-3-5 fingering as major triads. The hand shape is identical — only the middle note changes.
+    </p>
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-5 mb-4">
+      <p class="text-[#444] mb-3"><strong>Minor triad fingering: 1-3-5 (same pattern as major)</strong></p>
+      <p class="text-[#444] text-sm leading-[1.7]">
+        Use <strong>fingers 1 (thumb), 3 (middle), and 5 (pinky)</strong> for minor chords just like major chords:
+      </p>
+      <ul class="text-[#444] text-sm space-y-2 mt-3 pl-5 list-disc">
+        <li><strong>Right hand:</strong> Fingers 1-3-5 play root, third, fifth (ascending)</li>
+        <li><strong>Left hand:</strong> Fingers 5-3-1 play root, third, fifth (descending)</li>
+      </ul>
+    </div>
+    <div class="space-y-3 mb-4">
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+        <p class="font-semibold text-navy mb-2">A Minor Chord</p>
+        <p class="text-sm text-[#666] mb-2"><strong>Right hand:</strong> 1(A) - 3(C) - 5(E)</p>
+        <p class="text-sm text-[#666]"><strong>Left hand:</strong> 5(A) - 3(C) - 1(E)</p>
+      </div>
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+        <p class="font-semibold text-navy mb-2">D Minor Chord</p>
+        <p class="text-sm text-[#666] mb-2"><strong>Right hand:</strong> 1(D) - 3(F) - 5(A)</p>
+        <p class="text-sm text-[#666]"><strong>Left hand:</strong> 5(D) - 3(F) - 1(A)</p>
+      </div>
+      <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+        <p class="font-semibold text-navy mb-2">E Minor Chord</p>
+        <p class="text-sm text-[#666] mb-2"><strong>Right hand:</strong> 1(E) - 3(G) - 5(B)</p>
+        <p class="text-sm text-[#666]"><strong>Left hand:</strong> 5(E) - 3(G) - 1(B)</p>
+      </div>
+    </div>
+    <div class="bg-blue-50 rounded-lg border-l-4 border-blue-400 p-4">
+      <p class="text-sm text-[#444]">
+        <strong>Key insight:</strong> The hand shape is always the same — your fingers form a 1-3-5 pattern. The only difference between a major and minor chord is that the middle note is lowered by a half step. Your fingers already know how to play it!
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 4: The A Minor Scale -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The A Natural Minor Scale</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      Just as we learned the C major scale, we can learn scales in minor keys. The <strong>A natural minor scale</strong> consists of the notes:
+    </p>
+    <div class="bg-white rounded-lg p-4 border-l-4 border-purple mb-4 text-center">
+      <p class="text-[1.1rem] font-mono font-semibold text-navy">A B C D E F G A</p>
+    </div>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Interestingly, these are the <strong>same notes as C major scale</strong>, just starting from a different point! Try playing the scale on the keyboard below:
+    </p>
+    <div class="mb-4 bg-white rounded-lg p-4">
+      <button
+        class="text-sm bg-navy text-white px-4 py-2 rounded-lg cursor-pointer hover:opacity-90 transition-opacity mb-3"
+        onclick={showAMinorScale}
+      >Highlight A Minor Scale</button>
+      <VirtualKeyboard startOctave={3} endOctave={5} showLabels={true} highlightKeys={highlightedScale} />
+    </div>
+  </section>
+
+  <!-- Section 5: Relative Major and Minor -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Relative Major and Minor</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      Every major key has a <strong>relative minor</strong> — they share the same notes but start from a different point:
+    </p>
+    <div class="bg-white rounded-lg p-4 border-l-4 border-purple mb-4">
+      <p class="text-[#444] mb-2"><strong>C Major scale:</strong> C D E F G A B (starts on C)</p>
+      <p class="text-[#444]"><strong>A Minor scale:</strong> A B C D E F G (same notes, starts on A)</p>
+    </div>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      The relationship is always: <strong>the relative minor is 3 semitones (a minor third) below the major key</strong>. So:
+    </p>
+    <ul class="text-[#444] text-sm space-y-1 pl-5 list-disc mb-4">
+      <li>C major → A minor (relative minor)</li>
+      <li>G major → E minor</li>
+      <li>F major → D minor</li>
+      <li>D major → B minor</li>
+    </ul>
+    <p class="text-[#444] leading-[1.7]">
+      This relationship is one of the most important structural patterns in Western music. You'll see it everywhere.
+    </p>
+  </section>
+
+  <!-- Section 6: Play Scarborough Fair -->
+  {#if song}
+    <section class="mb-10">
+      <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Scarborough Fair (A Minor)</h2>
+      <p class="text-[#444] leading-[1.7] mb-4">
+        This traditional ballad is written in A minor. Notice how the melody is built from the A minor scale, and the overall sound is introspective and melancholic:
+      </p>
+      <div class="mb-4 bg-white rounded-lg p-4">
+        {#each song.lines as line}
+          <div class="mb-2">
+            <SongStaff notes={line} />
+          </div>
+        {/each}
+      </div>
+      <p class="text-[#444] leading-[1.7] text-sm">
+        Try playing this melody while thinking about the A minor scale and the A minor chord (A C E). The song "comes home" to these anchor points.
+      </p>
+    </section>
+  {/if}
+
+  <!-- Section 7: Ear Training -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Ear Training: Major vs Minor Chords</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Train your ear to distinguish major from minor chords instantly. Listen to each chord and identify whether it's major or minor:
+    </p>
+    <EarTraining mode="chord" />
+  </section>
+
+  <!-- Section 8: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test your understanding of sight-reading techniques?
+        Ready to test your understanding of minor chords, minor scales, and the relationship between major and minor?
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"

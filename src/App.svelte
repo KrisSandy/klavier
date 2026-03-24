@@ -3,31 +3,35 @@
   import { sidebar } from './stores/sidebar.svelte';
   import Sidebar from './components/Sidebar.svelte';
   import ConsentBanner from './components/ConsentBanner.svelte';
+  import AsyncLesson from './components/AsyncLesson.svelte';
   import Home from './pages/Home.svelte';
   import Practice from './pages/Practice.svelte';
   import Songs from './pages/Songs.svelte';
   import PrivacyPolicy from './pages/PrivacyPolicy.svelte';
   import TermsOfService from './pages/TermsOfService.svelte';
   import Settings from './pages/Settings.svelte';
-  import Lesson1 from './lessons/Lesson1.svelte';
-  import Lesson2 from './lessons/Lesson2.svelte';
-  import Lesson3 from './lessons/Lesson3.svelte';
-  import Lesson4 from './lessons/Lesson4.svelte';
-  import Lesson5 from './lessons/Lesson5.svelte';
-  import Lesson6 from './lessons/Lesson6.svelte';
-  import Lesson7 from './lessons/Lesson7.svelte';
-  import Lesson8 from './lessons/Lesson8.svelte';
-  import Lesson9 from './lessons/Lesson9.svelte';
-  import Lesson10 from './lessons/Lesson10.svelte';
-  import Lesson11 from './lessons/Lesson11.svelte';
-  import Lesson12 from './lessons/Lesson12.svelte';
-  import Lesson13 from './lessons/Lesson13.svelte';
-  import Lesson14 from './lessons/Lesson14.svelte';
-  import Lesson15 from './lessons/Lesson15.svelte';
-  import Lesson16 from './lessons/Lesson16.svelte';
-  import Lesson17 from './lessons/Lesson17.svelte';
-  import Lesson18 from './lessons/Lesson18.svelte';
+
+  // Focus management: move focus to main content heading on route change
+  let previousRoute = $state(router.current);
+
+  $effect(() => {
+    const current = router.current;
+    if (current !== previousRoute) {
+      previousRoute = current;
+      // Wait for DOM to update, then focus the first h1 in main
+      requestAnimationFrame(() => {
+        const heading = document.querySelector('#main-content h1') as HTMLElement | null;
+        if (heading) {
+          heading.setAttribute('tabindex', '-1');
+          heading.focus({ preventScroll: false });
+        }
+      });
+    }
+  });
 </script>
+
+<!-- Skip to main content link (visible on keyboard focus) -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
 
 <header
   class="sticky top-0 z-[100] bg-[#faf9f5] border-b border-[#dad9d4] px-8 py-[0.85rem] flex items-center shrink-0 gap-3"
@@ -38,7 +42,7 @@
     onclick={() => sidebar.toggle()}
     aria-label="Open navigation"
   >
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <line x1="3" y1="5" x2="17" y2="5" />
       <line x1="3" y1="10" x2="17" y2="10" />
       <line x1="3" y1="15" x2="17" y2="15" />
@@ -53,7 +57,7 @@
 <div class="flex-1 flex min-h-0">
   <Sidebar />
 
-  <main class="flex-1 overflow-y-auto">
+  <main id="main-content" class="flex-1 overflow-y-auto" tabindex="-1">
     {#if router.isHome}
       <Home />
     {:else if router.isPractice}
@@ -66,42 +70,10 @@
       <TermsOfService />
     {:else if router.isSettings}
       <Settings />
-    {:else if router.lessonId === 1}
-      <Lesson1 />
-    {:else if router.lessonId === 2}
-      <Lesson2 />
-    {:else if router.lessonId === 3}
-      <Lesson3 />
-    {:else if router.lessonId === 4}
-      <Lesson4 />
-    {:else if router.lessonId === 5}
-      <Lesson5 />
-    {:else if router.lessonId === 6}
-      <Lesson6 />
-    {:else if router.lessonId === 7}
-      <Lesson7 />
-    {:else if router.lessonId === 8}
-      <Lesson8 />
-    {:else if router.lessonId === 9}
-      <Lesson9 />
-    {:else if router.lessonId === 10}
-      <Lesson10 />
-    {:else if router.lessonId === 11}
-      <Lesson11 />
-    {:else if router.lessonId === 12}
-      <Lesson12 />
-    {:else if router.lessonId === 13}
-      <Lesson13 />
-    {:else if router.lessonId === 14}
-      <Lesson14 />
-    {:else if router.lessonId === 15}
-      <Lesson15 />
-    {:else if router.lessonId === 16}
-      <Lesson16 />
-    {:else if router.lessonId === 17}
-      <Lesson17 />
-    {:else if router.lessonId === 18}
-      <Lesson18 />
+    {:else if router.lessonId}
+      {#key router.lessonId}
+        <AsyncLesson lessonId={router.lessonId} />
+      {/key}
     {:else}
       <div class="max-w-3xl mx-auto px-6 py-16 text-center">
         <div class="text-[3rem] mb-4">🎹</div>

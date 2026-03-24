@@ -1,6 +1,6 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
+  import Metronome from '../components/Metronome.svelte';
   import SongStaff from '../components/SongStaff.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
@@ -11,8 +11,8 @@
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(9)!;
-  const songs = getSongsByLesson(9);
-  const minuet = songs[0]; // Minuet in G
+  const songs = getSongsByLesson(8);
+  const yankeeDoodle = songs[0]; // Yankee Doodle
 
   let showQuiz = $state(false);
   let isPlaying = $state(false);
@@ -27,19 +27,19 @@
       return;
     }
 
-    if (minuet) {
-      const allNotes = minuet.lines.flat();
+    if (yankeeDoodle) {
+      const allNotes = yankeeDoodle.lines.flat();
       const noteSequence = allNotes.map(id => {
         const note = getNoteById(id);
         return { midiNote: note?.midiNote ?? 60, duration: 1 };
       });
 
       isPlaying = true;
-      playbackStop = playSequence(noteSequence, minuet.bpm, (index) => {
+      playbackStop = playSequence(noteSequence, yankeeDoodle.bpm, (index) => {
         highlightIndex = index;
       });
 
-      const totalDuration = noteSequence.length * (60 / minuet.bpm) * 1000;
+      const totalDuration = noteSequence.length * (60 / yankeeDoodle.bpm) * 1000;
       setTimeout(() => {
         isPlaying = false;
         highlightIndex = -1;
@@ -59,83 +59,78 @@
   function generateQuestions(): QuizQuestion[] {
     const questions: QuizQuestion[] = [];
 
-    // Question 1: What does forte mean?
+    // Question 1: 4/4 beats per measure
     questions.push({
       id: 'q1',
-      prompt: 'What does the Italian word "forte" mean in music?',
-      correctAnswer: 'Loud',
-      choices: shuffle(['Soft', 'Loud', 'Medium', 'Very fast']),
+      prompt: 'How many beats per measure in 4/4 time?',
+      correctAnswer: '4',
+      choices: shuffle(['2', '3', '4', '6']),
     });
 
-    // Question 2: What does piano mean (soft)?
+    // Question 2: 3/4 beats per measure
     questions.push({
       id: 'q2',
-      prompt: 'In music, what does "piano" mean?',
-      correctAnswer: 'Soft',
-      choices: shuffle(['The instrument', 'Soft', 'Medium', 'Loud']),
+      prompt: 'How many beats per measure in 3/4 time?',
+      correctAnswer: '3',
+      choices: shuffle(['2', '3', '4', '6']),
     });
 
-    // Question 3: Crescendo symbol
+    // Question 3: Which note gets one beat in 6/8
     questions.push({
       id: 'q3',
-      prompt: 'What does this symbol < indicate in music?',
-      correctAnswer: 'Gradually getting louder (crescendo)',
-      choices: shuffle([
-        'Gradually getting softer (diminuendo)',
-        'Gradually getting louder (crescendo)',
-        'Play softly',
-        'Play loudly',
-      ]),
+      prompt: 'In 6/8 time, which note gets one beat?',
+      correctAnswer: 'Eighth note',
+      choices: shuffle(['Whole note', 'Half note', 'Quarter note', 'Eighth note']),
     });
 
-    // Question 4: Diminuendo symbol
+    // Question 4: Which note gets one beat in 4/4
     questions.push({
       id: 'q4',
-      prompt: 'What does this symbol > indicate in music?',
-      correctAnswer: 'Gradually getting softer (diminuendo)',
-      choices: shuffle([
-        'Gradually getting louder (crescendo)',
-        'Gradually getting softer (diminuendo)',
-        'Play loudly',
-        'Play softly',
-      ]),
+      prompt: 'In 4/4 time, which note gets one beat?',
+      correctAnswer: 'Quarter note',
+      choices: shuffle(['Whole note', 'Half note', 'Quarter note', 'Eighth note']),
     });
 
-    // Question 5: Mezzo-piano meaning
+    // Question 5: Waltz time signature
     questions.push({
       id: 'q5',
-      prompt: 'What does "mezzo-piano" (mp) mean?',
-      correctAnswer: 'Moderately soft',
-      choices: shuffle(['Very soft', 'Moderately soft', 'Medium', 'Loud']),
+      prompt: 'What time signature is typically used for a waltz?',
+      correctAnswer: '3/4',
+      choices: shuffle(['2/4', '3/4', '4/4', '6/8']),
     });
 
-    // Question 6: Mezzo-forte meaning
+    // Question 6: Bottom number meaning
     questions.push({
       id: 'q6',
-      prompt: 'What does "mezzo-forte" (mf) mean?',
-      correctAnswer: 'Moderately loud',
-      choices: shuffle(['Soft', 'Moderately soft', 'Moderately loud', 'Very loud']),
+      prompt: 'In a time signature, what does the bottom number represent?',
+      correctAnswer: 'Which note gets one beat',
+      choices: shuffle([
+        'Total beats in a measure',
+        'How many measures in a piece',
+        'Which note gets one beat',
+        'The tempo of the piece',
+      ]),
     });
 
-    // Question 7: Loudness comparison
+    // Question 7: 6/8 vs 3/4 difference
     questions.push({
       id: 'q7',
-      prompt: 'Which is louder: mezzo-forte (mf) or forte (f)?',
-      correctAnswer: 'Forte (f)',
-      choices: shuffle(['Mezzo-forte (mf)', 'Forte (f)', 'They are equal', 'It depends']),
+      prompt: 'What is the key difference between 6/8 and 3/4 time?',
+      correctAnswer: 'The accent pattern and grouping of beats',
+      choices: shuffle([
+        'The tempo',
+        'The accent pattern and grouping of beats',
+        '6/8 uses eighth notes and 3/4 uses quarter notes',
+        'There is no difference',
+      ]),
     });
 
-    // Question 8: Dynamic markings purpose
+    // Question 8: Common time symbol
     questions.push({
       id: 'q8',
-      prompt: 'What is the main purpose of dynamic markings in sheet music?',
-      correctAnswer: 'To tell the performer how loud or soft to play',
-      choices: shuffle([
-        'To indicate the tempo',
-        'To show which notes to emphasize',
-        'To tell the performer how loud or soft to play',
-        'To mark the end of a piece',
-      ]),
+      prompt: 'What is another name for 4/4 time?',
+      correctAnswer: 'Common time',
+      choices: shuffle(['Simple time', 'Common time', 'Perfect time', 'Waltz time']),
     });
 
     return questions;
@@ -144,7 +139,7 @@
   let quizQuestions = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(9, score, total, 0);
+    progress.saveQuizScore(8, score, total, 0);
   }
 
   function startQuiz() {
@@ -154,224 +149,165 @@
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: What Are Dynamics? -->
+  <!-- Section 1: What is a Time Signature? -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What Are Dynamics?</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is a Time Signature?</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      So far, you've learned to read the <strong>pitch</strong> (which note to play) and the <strong>duration</strong> (how long to hold it). But music needs one more element to truly come alive: <strong>dynamics</strong>.
+      A <strong>time signature</strong> (also called a "meter") is a pair of numbers at the beginning of a piece of music that tells you how the beats are organized. It looks like a fraction:
     </p>
 
-    <p class="text-[#444] leading-[1.7] mb-4">
-      <strong>Dynamics</strong> refer to how loud or soft to play. Music isn't just one volume level — it's constantly changing to create emotion and interest. A crescendo (getting louder) can build tension, while a diminuendo (getting softer) can bring peace.
-    </p>
-
-    <p class="text-[#444] leading-[1.7] mb-6">
-      Musicians use Italian terms and symbols to indicate dynamics. Here's the scale from softest to loudest:
-    </p>
-
-    <div class="space-y-2">
-      <div class="flex items-center gap-4 p-3 bg-white rounded border border-[#e8e6e0]">
-        <span class="font-bold text-navy w-12">pp</span>
-        <span class="font-semibold text-[#444]">Pianissimo</span>
-        <span class="text-[#666] text-sm flex-grow">Very soft</span>
+    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] mb-6">
+      <div class="text-center mb-4">
+        <svg viewBox="0 0 120 100" width="120" height="100">
+          <text x="60" y="40" font-size="32" font-weight="bold" text-anchor="middle" fill="#3d3929">4</text>
+          <line x1="20" y1="50" x2="100" y2="50" stroke="#3d3929" stroke-width="2" />
+          <text x="60" y="85" font-size="32" font-weight="bold" text-anchor="middle" fill="#3d3929">4</text>
+        </svg>
       </div>
-      <div class="flex items-center gap-4 p-3 bg-white rounded border border-[#e8e6e0]">
-        <span class="font-bold text-navy w-12">p</span>
-        <span class="font-semibold text-[#444]">Piano</span>
-        <span class="text-[#666] text-sm flex-grow">Soft</span>
-      </div>
-      <div class="flex items-center gap-4 p-3 bg-white rounded border border-[#e8e6e0]">
-        <span class="font-bold text-navy w-12">mp</span>
-        <span class="font-semibold text-[#444]">Mezzo-piano</span>
-        <span class="text-[#666] text-sm flex-grow">Moderately soft</span>
-      </div>
-      <div class="flex items-center gap-4 p-3 bg-white rounded border border-[#e8e6e0]">
-        <span class="font-bold text-navy w-12">mf</span>
-        <span class="font-semibold text-[#444]">Mezzo-forte</span>
-        <span class="text-[#666] text-sm flex-grow">Moderately loud</span>
-      </div>
-      <div class="flex items-center gap-4 p-3 bg-white rounded border border-[#e8e6e0]">
-        <span class="font-bold text-navy w-12">f</span>
-        <span class="font-semibold text-[#444]">Forte</span>
-        <span class="text-[#666] text-sm flex-grow">Loud</span>
-      </div>
-      <div class="flex items-center gap-4 p-3 bg-white rounded border border-[#e8e6e0]">
-        <span class="font-bold text-navy w-12">ff</span>
-        <span class="font-semibold text-[#444]">Fortissimo</span>
-        <span class="text-[#666] text-sm flex-grow">Very loud</span>
-      </div>
+      <p class="text-center text-[#666] text-sm">
+        <strong>Top number (numerator):</strong> How many beats per measure<br />
+        <strong>Bottom number (denominator):</strong> Which note gets one beat
+      </p>
     </div>
+
+    <p class="text-[#444] leading-[1.7] mb-4">
+      For example, in <strong>4/4 time</strong>:
+    </p>
+    <ul class="text-[#444] leading-[1.7] space-y-2 ml-6 mb-6">
+      <li>• <strong>Top 4:</strong> There are 4 beats in each measure</li>
+      <li>• <strong>Bottom 4:</strong> A quarter note gets 1 beat</li>
+    </ul>
+
+    <p class="text-[#444] leading-[1.7]">
+      Time signatures help you understand the rhythmic structure of a piece. They tell your hands and body how to group the beats together.
+    </p>
   </section>
 
-  <!-- Section 2: Dynamic Markings Table -->
+  <!-- Section 2: 4/4 Time (Common Time) -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Dynamic Markings Reference</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">4/4 Time (Common Time)</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Here's a complete reference for common dynamic markings:
+      <strong>4/4 time</strong> is the most common time signature in Western music. You've probably been playing in 4/4 this whole time! It's so common that it's also called <strong>"common time,"</strong> and you might see it written as a simple <strong>C</strong> symbol instead of 4/4.
     </p>
 
-    <div class="overflow-x-auto bg-white rounded-lg border border-[#e8e6e0]">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-[#e8e6e0] bg-[#faf9f5]">
-            <th class="px-4 py-3 text-left text-sm font-bold text-navy">Symbol</th>
-            <th class="px-4 py-3 text-left text-sm font-bold text-navy">Italian Term</th>
-            <th class="px-4 py-3 text-left text-sm font-bold text-navy">English Translation</th>
-            <th class="px-4 py-3 text-left text-sm font-bold text-navy">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="border-b border-[#e8e6e0]">
-            <td class="px-4 py-3 text-[1.2rem] text-navy font-bold">pp</td>
-            <td class="px-4 py-3 text-[#444]">Pianissimo</td>
-            <td class="px-4 py-3 text-[#444]">Very soft</td>
-            <td class="px-4 py-3 text-[#666] text-sm">As quiet as possible</td>
-          </tr>
-          <tr class="border-b border-[#e8e6e0] bg-[#faf9f5]">
-            <td class="px-4 py-3 text-[1.2rem] text-navy font-bold">p</td>
-            <td class="px-4 py-3 text-[#444]">Piano</td>
-            <td class="px-4 py-3 text-[#444]">Soft</td>
-            <td class="px-4 py-3 text-[#666] text-sm">Quieter than normal</td>
-          </tr>
-          <tr class="border-b border-[#e8e6e0]">
-            <td class="px-4 py-3 text-[1.2rem] text-navy font-bold">mp</td>
-            <td class="px-4 py-3 text-[#444]">Mezzo-piano</td>
-            <td class="px-4 py-3 text-[#444]">Moderately soft</td>
-            <td class="px-4 py-3 text-[#666] text-sm">Between soft and normal</td>
-          </tr>
-          <tr class="border-b border-[#e8e6e0] bg-[#faf9f5]">
-            <td class="px-4 py-3 text-[1.2rem] text-navy font-bold">mf</td>
-            <td class="px-4 py-3 text-[#444]">Mezzo-forte</td>
-            <td class="px-4 py-3 text-[#444]">Moderately loud</td>
-            <td class="px-4 py-3 text-[#666] text-sm">Between normal and loud</td>
-          </tr>
-          <tr class="border-b border-[#e8e6e0]">
-            <td class="px-4 py-3 text-[1.2rem] text-navy font-bold">f</td>
-            <td class="px-4 py-3 text-[#444]">Forte</td>
-            <td class="px-4 py-3 text-[#444]">Loud</td>
-            <td class="px-4 py-3 text-[#666] text-sm">Louder than normal</td>
-          </tr>
-          <tr class="bg-[#faf9f5]">
-            <td class="px-4 py-3 text-[1.2rem] text-navy font-bold">ff</td>
-            <td class="px-4 py-3 text-[#444]">Fortissimo</td>
-            <td class="px-4 py-3 text-[#444]">Very loud</td>
-            <td class="px-4 py-3 text-[#666] text-sm">As loud as possible</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0] mb-6">
+      <p class="text-sm font-semibold text-navy mb-4">The beat pattern:</p>
+      <div class="flex items-center justify-between">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-navy mb-2">1</p>
+          <p class="text-xs text-[#666]">Strong</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#999] mb-2">2</p>
+          <p class="text-xs text-[#666]">Weak</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#bbb] mb-2">3</p>
+          <p class="text-xs text-[#666]">Medium</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#999] mb-2">4</p>
+          <p class="text-xs text-[#666]">Weak</p>
+        </div>
+      </div>
+      <p class="text-[#666] text-sm mt-4 text-center">
+        The first beat (1) is always the strongest. The third beat (3) has a secondary accent. Beats 2 and 4 are weaker.
+      </p>
     </div>
 
-    <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4 mt-6">
-      <p class="text-sm text-[#444]">
-        <strong>💡 Memory tip:</strong> "Piano" means soft (the word for the instrument, piano, comes from the Italian word for soft because it could play at different dynamics — unlike harpsichords!)
+    <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4">
+      <p class="text-[#444] text-sm">
+        <strong>💡 Example:</strong> Pop songs, classical symphonies, rock songs — most music you hear uses 4/4 time. It feels natural and balanced.
       </p>
     </div>
   </section>
 
-  <!-- Section 3: Crescendo & Diminuendo -->
+  <!-- Section 3: 3/4 Time (Waltz) -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Crescendo & Diminuendo</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">3/4 Time (Waltz)</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Sometimes, instead of jumping from one volume to another, music <strong>gradually</strong> changes volume. These gradual changes are called:
+      <strong>3/4 time</strong> has 3 beats per measure. It's the natural time signature for waltzes, lullabies, and many classical pieces. It has a flowing, graceful feeling compared to the balanced feel of 4/4.
     </p>
 
-    <ul class="text-[#444] leading-[1.7] space-y-3 ml-6 mb-6">
-      <li>• <strong>Crescendo (cresc.)</strong> — Gradually getting louder over time</li>
-      <li>• <strong>Diminuendo (dim.)</strong> — Gradually getting softer over time</li>
-    </ul>
-
-    <p class="text-[#444] leading-[1.7] mb-6">
-      These are shown using <strong>hairpin symbols</strong>:
-    </p>
-
-    <div class="space-y-6">
-      <!-- Crescendo -->
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-4">Crescendo (getting louder):</p>
-        <div class="flex items-center gap-6 mb-4">
-          <svg viewBox="0 0 200 60" width="200" height="60">
-            <text x="10" y="35" font-size="14" fill="#666">Soft</text>
-            <path d="M 60 20 L 140 40" stroke="#3d3929" stroke-width="2" fill="none" />
-            <path d="M 60 40 L 140 20" stroke="#3d3929" stroke-width="2" fill="none" />
-            <text x="150" y="35" font-size="14" fill="#666">Loud</text>
-          </svg>
+    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0] mb-6">
+      <p class="text-sm font-semibold text-navy mb-4">The beat pattern:</p>
+      <div class="flex items-center justify-between">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-navy mb-2">1</p>
+          <p class="text-xs text-[#666]">Strong</p>
         </div>
-        <p class="text-[#666] text-sm">
-          Start soft and gradually build to loud. This is written as: <span class="font-mono bg-[#f5f4f0] px-2 py-1 rounded">cresc.</span>
-        </p>
-      </div>
-
-      <!-- Diminuendo -->
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-4">Diminuendo (getting softer):</p>
-        <div class="flex items-center gap-6 mb-4">
-          <svg viewBox="0 0 200 60" width="200" height="60">
-            <text x="10" y="35" font-size="14" fill="#666">Loud</text>
-            <path d="M 60 20 L 140 40" stroke="#3d3929" stroke-width="2" fill="none" />
-            <path d="M 60 40 L 140 20" stroke="#3d3929" stroke-width="2" fill="none" />
-            <text x="150" y="35" font-size="14" fill="#666">Soft</text>
-          </svg>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#999] mb-2">2</p>
+          <p class="text-xs text-[#666]">Weak</p>
         </div>
-        <p class="text-[#666] text-sm">
-          Start loud and gradually fade to soft. This is written as: <span class="font-mono bg-[#f5f4f0] px-2 py-1 rounded">dim.</span>
-        </p>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-[#999] mb-2">3</p>
+          <p class="text-xs text-[#666]">Weak</p>
+        </div>
       </div>
+      <p class="text-[#666] text-sm mt-4 text-center">
+        Only the first beat is accented. The pattern repeats: 1-weak-weak, 1-weak-weak. This creates the classic waltz rhythm.
+      </p>
     </div>
 
-    <p class="text-[#444] leading-[1.7] mt-6">
-      Crescendos and diminuendos are essential for creating emotional depth. A crescendo builds anticipation and excitement, while a diminuendo creates a sense of resolution and peace.
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Let's listen to how 3/4 time feels. Practice counting along with a metronome:
     </p>
-  </section>
-
-  <!-- Section 4: Practice with Dynamics -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Practice with Dynamics</h2>
-    <p class="text-[#444] leading-[1.7] mb-6">
-      Now let's practice playing notes at different volumes! Try the exercises below:
-    </p>
-
-    <div class="space-y-6">
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-4">Exercise 1: Play soft (pianissimo)</p>
-        <p class="text-[#666] text-sm mb-4">
-          Select a note below and play it very quietly (pp). Your touch should be light and gentle.
-        </p>
-        <VirtualKeyboard startOctave={3} endOctave={5} showLabels={true} />
-      </div>
-
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-4">Exercise 2: Play loud (fortissimo)</p>
-        <p class="text-[#666] text-sm mb-4">
-          Select the same note and play it very loudly (ff). Strike the key with more force and let the sound ring.
-        </p>
-        <VirtualKeyboard startOctave={3} endOctave={5} showLabels={true} />
-      </div>
-
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-4">Exercise 3: Crescendo (getting louder)</p>
-        <p class="text-[#666] text-sm mb-4">
-          Play a single note repeatedly, starting very soft and gradually getting louder with each repetition. You should hear the volume climb.
-        </p>
-        <VirtualKeyboard startOctave={3} endOctave={5} showLabels={true} />
-      </div>
-
-      <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4">
-        <p class="text-sm text-[#444]">
-          <strong>💡 Practice tip:</strong> Dynamics are created by how hard you strike the key and how quickly you release it. Softer = lighter touch. Louder = more force. A good pianist can play the entire range of dynamics on the same note!
-        </p>
-      </div>
+    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
+      <p class="text-sm font-semibold text-navy mb-4">Practice counting 3/4 time (waltz tempo):</p>
+      <Metronome initialBpm={100} />
     </div>
   </section>
 
-  <!-- Section 5: Play Minuet in G -->
+  <!-- Section 4: 6/8 Time -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Play Minuet in G</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">6/8 Time</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Now let's listen to a classical piece with beautiful dynamic variation: <strong>Minuet in G</strong> by Johann Sebastian Bach. Pay attention to how the volume changes to create expression and shape the phrases.
+      <strong>6/8 time</strong> is more complex. It has 6 beats per measure, but in 6/8, the eighth note gets one beat (not the quarter note). This means there are 6 eighth notes per measure.
     </p>
 
-    {#if minuet}
-      {#each minuet.lines as line, lineIdx}
+    <p class="text-[#444] leading-[1.7] mb-4">
+      What makes 6/8 special is that it's <strong>compound meter</strong>. Even though there are 6 beats, they're grouped in twos (2 groups of 3), so it feels like there are 2 main beats per measure, not 6. This gives it a rolling, lilting feeling.
+    </p>
+
+    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0] mb-6">
+      <p class="text-sm font-semibold text-navy mb-4">6/8 vs 3/4 comparison:</p>
+      <div class="space-y-4">
+        <div>
+          <p class="text-sm font-semibold text-navy mb-2">3/4 Time:</p>
+          <p class="text-[#666] text-sm">
+            <strong>3 quarter notes per measure.</strong> Each quarter note gets 1 beat. It feels like 1-2-3, 1-2-3.
+          </p>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-navy mb-2">6/8 Time:</p>
+          <p class="text-[#666] text-sm">
+            <strong>6 eighth notes per measure.</strong> Each eighth note gets 1 beat, but they group into 2 strong beats. It feels like 1-2-3, 4-5-6 (or "one-and-a, two-and-a").
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Examples of 6/8 time: "Twinkle Twinkle Little Star," sea shanties, and many folk melodies have that characteristic bouncy, swaying feel.
+    </p>
+  </section>
+
+  <!-- Section 5: Listen to Yankee Doodle -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Listen to Yankee Doodle</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Let's listen to a piece written in 4/4 time: "Yankee Doodle." This famous American melody uses the standard 4/4 meter. Press play and count along with the beats!
+    </p>
+
+    <div class="bg-[#fdf6ee] border border-[#f0dcc8] rounded-lg p-4 mb-6">
+      <p class="text-[#444] leading-[1.7] text-sm">
+        <strong>Fingering Tip:</strong> Yankee Doodle mostly stays in C position. When the melody dips below C (to B3 or G3), the left hand takes over with fingers 1 (B) and 4 (G). Practice time signature changes without changing hand position first — this builds solid rhythmic awareness!
+      </p>
+    </div>
+
+    {#if yankeeDoodle}
+      {#each yankeeDoodle.lines as line, lineIdx}
         <div class="mb-6">
           <p class="text-sm text-[#999] mb-2">Line {lineIdx + 1}</p>
           <SongStaff notes={line} {highlightIndex} />
@@ -382,13 +318,13 @@
         class="bg-purple text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity mb-6"
         onclick={playMelody}
       >
-        {isPlaying ? 'Stop Playback' : 'Play Minuet in G'}
+        {isPlaying ? 'Stop Playback' : 'Play Yankee Doodle'}
       </button>
     {/if}
 
     <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4 mt-6">
       <p class="text-sm text-[#444]">
-        <strong>💡 What to listen for:</strong> Notice how the music "breathes." Phrases often start softer and build energy, then release. This natural ebb and flow of energy is what makes music expressive!
+        <strong>💡 Try this:</strong> As you listen, clap on beats 1 and 3 (the strong and medium-strong beats in 4/4). You'll feel the natural pulse of the music!
       </p>
     </div>
   </section>
@@ -398,7 +334,7 @@
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test your understanding of dynamics and expression? Take the quiz below!
+        Ready to test what you've learned about time signatures? Take the quiz below!
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"

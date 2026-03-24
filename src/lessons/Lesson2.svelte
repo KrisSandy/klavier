@@ -1,228 +1,515 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import Staff from '../components/Staff.svelte';
+  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
-  import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
-  import { TREBLE_NOTES, ALL_LETTERS, STAFF_LINES, CLEF_FONT_SIZE } from '../data/notes';
   import { progress } from '../stores/progress.svelte';
+  import { playNote } from '../stores/audio';
+  import type { QuizQuestion } from '../components/QuizEngine.svelte';
 
   const lesson = getLessonById(2)!;
 
-  let showQuiz = $state(false);
+  // ── Interactive state ─────────────────────────────────────────────────────
+  let activeKey = $state<string | null>(null);
+  let showRightHand = $state(true);
+  let currentFingerDemo = $state<number | null>(null);
 
-  function shuffle<T>(arr: T[]): T[] {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
+  // Right hand C position: thumb on C4, pinky on G4
+  const rightHandPosition: Record<number, { note: string; finger: string; label: string }> = {
+    1: { note: 'C4', finger: '1 — Thumb', label: 'C' },
+    2: { note: 'D4', finger: '2 — Index', label: 'D' },
+    3: { note: 'E4', finger: '3 — Middle', label: 'E' },
+    4: { note: 'F4', finger: '4 — Ring', label: 'F' },
+    5: { note: 'G4', finger: '5 — Pinky', label: 'G' },
+  };
+
+  // Left hand C position: pinky on C3, thumb on G3
+  const leftHandPosition: Record<number, { note: string; finger: string; label: string }> = {
+    5: { note: 'C3', finger: '5 — Pinky', label: 'C' },
+    4: { note: 'D3', finger: '4 — Ring', label: 'D' },
+    3: { note: 'E3', finger: '3 — Middle', label: 'E' },
+    2: { note: 'F3', finger: '2 — Index', label: 'F' },
+    1: { note: 'G3', finger: '1 — Thumb', label: 'G' },
+  };
+
+  const currentPosition = $derived(showRightHand ? rightHandPosition : leftHandPosition);
+  const highlightedKeys = $derived(
+    Object.values(currentPosition).map(p => p.note)
+  );
+
+  function handleFingerClick(fingerNum: number) {
+    currentFingerDemo = fingerNum;
+    const pos = currentPosition[fingerNum];
+    if (pos) {
+      activeKey = pos.note;
+      const midiMap: Record<string, number> = {
+        'C3': 48, 'D3': 50, 'E3': 52, 'F3': 53, 'G3': 55,
+        'C4': 60, 'D4': 62, 'E4': 64, 'F4': 65, 'G4': 67,
+      };
+      playNote(midiMap[pos.note], 0.6);
+      setTimeout(() => { activeKey = null; currentFingerDemo = null; }, 800);
     }
-    return a;
   }
 
-  function generateQuestions(): { questions: QuizQuestion[]; noteMap: Record<string, number> } {
-    const questions: QuizQuestion[] = [];
-    const noteMap: Record<string, number> = {};
-    const pool = [...TREBLE_NOTES];
-    const picked = shuffle(pool).slice(0, 10);
+  function handleNotePlay(noteId: string, midiNote: number) {
+    activeKey = noteId;
+    playNote(midiNote, 0.5);
+    setTimeout(() => { activeKey = null; }, 400);
+  }
 
-    for (let i = 0; i < picked.length; i++) {
-      const note = picked[i];
-      const distractors = shuffle(ALL_LETTERS.filter(l => l !== note.name)).slice(0, 3);
-      const qId = `q${i}-${note.id}`;
-      noteMap[qId] = note.yPos;
-      questions.push({
-        id: qId,
-        prompt: 'What note is this?',
-        correctAnswer: note.name,
-        choices: shuffle([note.name, ...distractors]),
-      });
+  // Play all five fingers in sequence
+  let isPlayingSequence = $state(false);
+  function playFingerSequence() {
+    if (isPlayingSequence) return;
+    isPlayingSequence = true;
+    const fingers = showRightHand ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+    let i = 0;
+    function playNext() {
+      if (i >= fingers.length) {
+        isPlayingSequence = false;
+        return;
+      }
+      handleFingerClick(fingers[i]);
+      i++;
+      setTimeout(playNext, 500);
     }
-    return { questions, noteMap };
+    playNext();
   }
 
-  let quizData = $state(generateQuestions());
+  // Quiz questions — must match QuizQuestion interface: { id, prompt, correctAnswer, choices }
+  const questions: QuizQuestion[] = [
+    {
+      id: 'q1',
+      prompt: 'Which finger is number 1 on both hands?',
+      correctAnswer: 'Thumb',
+      choices: ['Index finger', 'Thumb', 'Middle finger', 'Pinky'],
+    },
+    {
+      id: 'q2',
+      prompt: 'What is finger number 5?',
+      correctAnswer: 'Pinky (little finger)',
+      choices: ['Ring finger', 'Thumb', 'Middle finger', 'Pinky (little finger)'],
+    },
+    {
+      id: 'q3',
+      prompt: 'In the right hand C position, which finger plays middle C?',
+      correctAnswer: 'Finger 1 (thumb)',
+      choices: ['Finger 5 (pinky)', 'Finger 3 (middle)', 'Finger 1 (thumb)', 'Finger 2 (index)'],
+    },
+    {
+      id: 'q4',
+      prompt: 'In the left hand C position, which finger plays C?',
+      correctAnswer: 'Finger 5 (pinky)',
+      choices: ['Finger 1 (thumb)', 'Finger 5 (pinky)', 'Finger 3 (middle)', 'Finger 2 (index)'],
+    },
+    {
+      id: 'q5',
+      prompt: 'What does "C position" mean?',
+      correctAnswer: 'Each finger rests on one white key starting from C',
+      choices: [
+        'Playing only the note C',
+        'Each finger rests on one white key starting from C',
+        'Using only your right hand',
+        'Playing a C chord',
+      ],
+    },
+    {
+      id: 'q6',
+      prompt: 'Why is the thumb numbered 1 (not 5)?',
+      correctAnswer: 'Because it is closest to the center of the keyboard and most used',
+      choices: [
+        'Because it is the smallest finger',
+        'Because it is closest to the center of the keyboard and most used',
+        'It is just a random convention',
+        'Because it moves first',
+      ],
+    },
+    {
+      id: 'q7',
+      prompt: 'Which finger number is the ring finger?',
+      correctAnswer: '4',
+      choices: ['2', '3', '4', '5'],
+    },
+    {
+      id: 'q8',
+      prompt: 'In the right hand, finger 3 plays which note in C position?',
+      correctAnswer: 'E',
+      choices: ['C', 'D', 'E', 'F'],
+    },
+    {
+      id: 'q9',
+      prompt: 'What should your hand shape look like when playing?',
+      correctAnswer: 'Gently curved, as if holding a ball',
+      choices: [
+        'Flat with fingers straight',
+        'Gently curved, as if holding a ball',
+        'Fingers spread wide apart',
+        'Fist-like, with fingers tucked in',
+      ],
+    },
+    {
+      id: 'q10',
+      prompt: 'Are the finger numbers the same for both hands?',
+      correctAnswer: 'Yes — thumb is always 1, pinky is always 5',
+      choices: [
+        'No, they are reversed',
+        'Yes — thumb is always 1, pinky is always 5',
+        'Only for the right hand',
+        'They use letters instead of numbers for the left hand',
+      ],
+    },
+  ];
 
-  function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(2, score, total, 0);
-  }
-
-  function startQuiz() {
-    quizData = generateQuestions();
-    showQuiz = true;
+  function handleQuizComplete(score: number, total: number) {
+    progress.saveQuizScore(lesson.id, score, total, 0);
   }
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: The Staff -->
+  <!-- Section 1: Why Finger Numbers Matter -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Five-Line Staff</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      Music is written on a five-line staff. The lines are numbered from bottom to top as 1, 2, 3, 4, 5. Between the lines are four spaces, also numbered from bottom to top as 1, 2, 3, 4. Together, the five lines and four spaces give us nine different positions for notes.
+    <h2 class="text-[1.25rem] font-bold text-navy mb-3">Why Finger Numbers Matter</h2>
+    <p class="text-[0.95rem] text-[#444] leading-relaxed mb-4">
+      Before you play a single melody, you need to know which finger goes where. Piano music uses a
+      universal numbering system for fingers — and it is the same for both hands. Getting comfortable
+      with this system early will make learning every piece that follows much easier.
     </p>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Look at an empty staff below — just five horizontal lines:
+    <p class="text-[0.95rem] text-[#444] leading-relaxed">
+      Finger numbers appear in sheet music as small digits above or below notes. They tell you exactly
+      which finger to use, helping you play smoothly without awkward hand jumps. Professional pianists
+      plan their fingering carefully — and so should you, right from the start.
     </p>
-    <div class="flex justify-center mb-4">
-      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
-        <!-- Staff lines only -->
-        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
-      </svg>
-    </div>
   </section>
 
-  <!-- Section 2: The Treble Clef -->
+  <!-- Section 2: The Five Fingers -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Treble Clef</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      At the beginning of every staff you'll see a symbol called the <strong>treble clef</strong> (also called the G clef). The curl of this symbol wraps around the second line from the bottom, which is the note <strong>G</strong>. This is how the treble clef got its name — it marks where G is on the staff.
+    <h2 class="text-[1.25rem] font-bold text-navy mb-3">The Numbering System</h2>
+    <p class="text-[0.95rem] text-[#444] leading-relaxed mb-5">
+      Each finger gets a number from 1 to 5. The numbering is the same on both hands — your thumb is
+      always 1 and your pinky is always 5.
     </p>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Here's a staff with the treble clef and a G note highlighted:
-    </p>
-    <div class="flex justify-center mb-4">
-      <div style="max-width: 500px;">
-        <Staff yPos={100} />
+
+    <!-- Hand diagram -->
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-6 mb-6">
+      <div class="flex justify-center gap-8 flex-wrap">
+        <!-- Left Hand -->
+        <div class="text-center">
+          <p class="text-[0.85rem] font-semibold text-navy mb-3">Left Hand</p>
+          <svg viewBox="0 0 200 220" width="180" height="200" class="mx-auto">
+            <!-- Palm -->
+            <ellipse cx="100" cy="160" rx="55" ry="50" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" opacity="0.4" />
+            <!-- Pinky (5) -->
+            <rect x="148" y="55" width="18" height="75" rx="9" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="157" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">5</text>
+            <!-- Ring (4) -->
+            <rect x="125" y="35" width="20" height="90" rx="10" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="135" y="70" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">4</text>
+            <!-- Middle (3) -->
+            <rect x="90" y="25" width="22" height="100" rx="11" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="101" y="65" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">3</text>
+            <!-- Index (2) -->
+            <rect x="58" y="40" width="20" height="88" rx="10" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="68" y="73" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">2</text>
+            <!-- Thumb (1) -->
+            <rect x="28" y="95" width="22" height="55" rx="11" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" transform="rotate(-25, 39, 122)" />
+            <text x="35" y="115" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">1</text>
+          </svg>
+        </div>
+
+        <!-- Right Hand -->
+        <div class="text-center">
+          <p class="text-[0.85rem] font-semibold text-navy mb-3">Right Hand</p>
+          <svg viewBox="0 0 200 220" width="180" height="200" class="mx-auto">
+            <!-- Palm -->
+            <ellipse cx="100" cy="160" rx="55" ry="50" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" opacity="0.4" />
+            <!-- Thumb (1) -->
+            <rect x="150" y="95" width="22" height="55" rx="11" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" transform="rotate(25, 161, 122)" />
+            <text x="165" y="115" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">1</text>
+            <!-- Index (2) -->
+            <rect x="122" y="40" width="20" height="88" rx="10" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="132" y="73" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">2</text>
+            <!-- Middle (3) -->
+            <rect x="90" y="25" width="22" height="100" rx="11" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="101" y="65" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">3</text>
+            <!-- Ring (4) -->
+            <rect x="57" y="35" width="20" height="90" rx="10" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="67" y="70" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">4</text>
+            <!-- Pinky (5) -->
+            <rect x="34" y="55" width="18" height="75" rx="9" fill="#fde68a" stroke="#ce7e4f" stroke-width="1.5" />
+            <text x="43" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#3d3929">5</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="mt-4 text-center">
+        <p class="text-[0.85rem] text-[#6b6455]">
+          <strong>1</strong> = Thumb &nbsp;·&nbsp;
+          <strong>2</strong> = Index &nbsp;·&nbsp;
+          <strong>3</strong> = Middle &nbsp;·&nbsp;
+          <strong>4</strong> = Ring &nbsp;·&nbsp;
+          <strong>5</strong> = Pinky
+        </p>
       </div>
     </div>
-    <p class="text-[#444] leading-[1.7]">
-      The note shown above is <strong>G4</strong> — it sits right on the line that the treble clef's curl marks.
+
+    <p class="text-[0.95rem] text-[#444] leading-relaxed">
+      Notice that the thumb is always 1, regardless of which hand you are using. This is a universal
+      convention used by pianists worldwide. When you see a "1" in sheet music, it always means the thumb.
     </p>
   </section>
 
-  <!-- Section 3: Notes on Lines -->
+  <!-- Section 3: Hand Position -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Notes on the Lines</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      In the treble clef, the notes that sit on the five lines are: <strong>E, G, B, D, F</strong> (from bottom to top). A classic memory aid is: <strong>"Every Good Boy Does Fine"</strong>.
+    <h2 class="text-[1.25rem] font-bold text-navy mb-3">Proper Hand Position</h2>
+    <p class="text-[0.95rem] text-[#444] leading-relaxed mb-4">
+      Good hand position is the foundation of good piano playing. Here are the key principles to remember
+      every time you sit at the keyboard.
     </p>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Here are all five line notes shown together:
-    </p>
-    <div class="flex justify-center mb-4">
-      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
-        <!-- Staff lines -->
-        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
-        <!-- Treble clef -->
-        <text x="42" y="128" font-size="105" font-family="Noto Music" fill="#3d3929">𝄞</text>
-        <!-- Note heads on lines with labels -->
-        <!-- E4 (y=120) -->
-        <ellipse cx="280" cy="120" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="280" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">E</text>
-        <!-- G4 (y=100) -->
-        <ellipse cx="320" cy="100" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="320" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">G</text>
-        <!-- B4 (y=80) -->
-        <ellipse cx="360" cy="80" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="360" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">B</text>
-        <!-- D5 (y=60) -->
-        <ellipse cx="400" cy="60" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="400" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">D</text>
-        <!-- F5 (y=40) -->
-        <ellipse cx="440" cy="40" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="440" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">F</text>
-      </svg>
-    </div>
-  </section>
 
-  <!-- Section 4: Notes on Spaces -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Notes in the Spaces</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      The four spaces between the lines contain the notes: <strong>F, A, C, E</strong> (from bottom to top). These spell the word <strong>"FACE"</strong> — easy to remember!
-    </p>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Here are all four space notes:
-    </p>
-    <div class="flex justify-center mb-4">
-      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
-        <!-- Staff lines -->
-        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
-        <!-- Treble clef -->
-        <text x="42" y="128" font-size="105" font-family="Noto Music" fill="#3d3929">𝄞</text>
-        <!-- Note heads in spaces with labels -->
-        <!-- F4 (y=110, space below) -->
-        <ellipse cx="280" cy="110" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="280" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">F</text>
-        <!-- A4 (y=90, space) -->
-        <ellipse cx="320" cy="90" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="320" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">A</text>
-        <!-- C5 (y=70, space) -->
-        <ellipse cx="360" cy="70" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="360" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">C</text>
-        <!-- E5 (y=50, space above) -->
-        <ellipse cx="400" cy="50" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
-        <text x="400" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">E</text>
-      </svg>
-    </div>
-  </section>
-
-  <!-- Section 5: Ledger Lines -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Ledger Lines</h2>
-    <p class="text-[#444] leading-[1.7] mb-3">
-      What about notes that go higher or lower than the staff? We use short extra lines called <strong>ledger lines</strong>. Each ledger line works the same way — a note sits on it or in a space between ledger lines.
-    </p>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Here's an example with a high note (F5) and a low note (C4):
-    </p>
-    <div class="flex justify-center mb-4">
-      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
-        <!-- Ledger line above staff (F5) -->
-        <line x1="40" y1="30" x2="460" y2="30" stroke="#3d3929" stroke-width="1" opacity="0.5" />
-        <!-- Staff lines -->
-        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
-        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
-        <!-- Ledger line below staff (C4) -->
-        <line x1="40" y1="130" x2="460" y2="130" stroke="#3d3929" stroke-width="1" opacity="0.5" />
-        <!-- Treble clef -->
-        <text x="42" y="128" font-size="105" font-family="Noto Music" fill="#3d3929">𝄞</text>
-        <!-- High note F5 on ledger line -->
-        <ellipse cx="280" cy="30" rx="10" ry="7" fill="none" stroke="#ce7e4f" stroke-width="2" />
-        <text x="280" y="155" font-size="14" text-anchor="middle" fill="#ce7e4f" font-weight="bold">F5</text>
-        <!-- Low note C4 on ledger line -->
-        <ellipse cx="400" cy="130" rx="10" ry="7" fill="none" stroke="#ce7e4f" stroke-width="2" />
-        <text x="400" y="155" font-size="14" text-anchor="middle" fill="#ce7e4f" font-weight="bold">C4</text>
-      </svg>
-    </div>
-  </section>
-
-  <!-- Section 6: Quiz -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
-    {#if !showQuiz}
-      <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to identify notes on the staff? Each question will show a note on the treble clef — pick the correct letter name.
-      </p>
-      <button
-        class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
-        onclick={startQuiz}
-      >Start Quiz</button>
-    {:else}
-      <QuizEngine questions={quizData.questions} onComplete={onQuizComplete}>
-        {#snippet children({ currentQuestion, questionIndex })}
-          <div class="mb-4 flex justify-center">
-            <div style="max-width: 500px;">
-              <Staff yPos={quizData.noteMap[quizData.questions[questionIndex]?.id] || 100} />
-            </div>
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-5 mb-4">
+      <div class="space-y-4">
+        <div class="flex gap-3 items-start">
+          <span class="text-[1.2rem] shrink-0 mt-0.5">🤲</span>
+          <div>
+            <p class="text-[0.95rem] font-medium text-navy">Curved fingers</p>
+            <p class="text-[0.85rem] text-[#6b6455] leading-relaxed">
+              Imagine holding a tennis ball — your fingers should be gently curved, not flat.
+              Play with the fingertips, not the flat pads of your fingers.
+            </p>
           </div>
-        {/snippet}
-      </QuizEngine>
-    {/if}
+        </div>
+        <div class="flex gap-3 items-start">
+          <span class="text-[1.2rem] shrink-0 mt-0.5">🫳</span>
+          <div>
+            <p class="text-[0.95rem] font-medium text-navy">Relaxed wrist</p>
+            <p class="text-[0.85rem] text-[#6b6455] leading-relaxed">
+              Your wrist should be level with or slightly above the keys — not drooping below
+              or raised high. Keep it relaxed to avoid tension and fatigue.
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-3 items-start">
+          <span class="text-[1.2rem] shrink-0 mt-0.5">🪑</span>
+          <div>
+            <p class="text-[0.95rem] font-medium text-navy">Seated position</p>
+            <p class="text-[0.85rem] text-[#6b6455] leading-relaxed">
+              Sit at the center of the keyboard with your elbows slightly above key level. Your forearms
+              should be roughly parallel to the floor. Feet flat on the ground.
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-3 items-start">
+          <span class="text-[1.2rem] shrink-0 mt-0.5">👍</span>
+          <div>
+            <p class="text-[0.95rem] font-medium text-navy">Thumb position</p>
+            <p class="text-[0.85rem] text-[#6b6455] leading-relaxed">
+              Your thumb plays with its side edge (not the tip like the other fingers). It rests
+              naturally on the keys — avoid letting it hang off the keyboard.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: C Position — Interactive -->
+  <section class="mb-10">
+    <h2 class="text-[1.25rem] font-bold text-navy mb-3">C Position — Your First Hand Position</h2>
+    <p class="text-[0.95rem] text-[#444] leading-relaxed mb-4">
+      The "C position" is the first hand position every pianist learns. Place your thumb on C and let
+      each finger rest on the next white key. For the right hand, that means fingers 1-2-3-4-5 on
+      C-D-E-F-G. For the left hand, fingers 5-4-3-2-1 rest on C-D-E-F-G (pinky on C, thumb on G).
+    </p>
+
+    <!-- Hand toggle -->
+    <div class="flex gap-2 mb-4">
+      <button
+        class="px-4 py-2 rounded-lg text-[0.85rem] font-medium cursor-pointer transition-all border-none"
+        style="background: {showRightHand ? '#3d3929' : '#f0ede6'}; color: {showRightHand ? '#fff' : '#6b6455'};"
+        onclick={() => { showRightHand = true; currentFingerDemo = null; }}
+      >Right Hand</button>
+      <button
+        class="px-4 py-2 rounded-lg text-[0.85rem] font-medium cursor-pointer transition-all border-none"
+        style="background: {!showRightHand ? '#3d3929' : '#f0ede6'}; color: {!showRightHand ? '#fff' : '#6b6455'};"
+        onclick={() => { showRightHand = false; currentFingerDemo = null; }}
+      >Left Hand</button>
+    </div>
+
+    <!-- Finger buttons -->
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-5 mb-4">
+      <p class="text-[0.85rem] font-semibold text-navy mb-3">
+        {showRightHand ? 'Right Hand' : 'Left Hand'} — C Position
+      </p>
+      <p class="text-[0.85rem] text-[#6b6455] mb-4">
+        Click a finger number to see and hear which key it plays:
+      </p>
+
+      <div class="flex gap-2 justify-center mb-4 flex-wrap">
+        {#each Object.entries(currentPosition) as [num, pos]}
+          <button
+            class="w-16 h-20 rounded-lg cursor-pointer transition-all border-2 flex flex-col items-center justify-center gap-1"
+            style="
+              background: {currentFingerDemo === Number(num) ? '#ce7e4f' : '#faf9f5'};
+              border-color: {currentFingerDemo === Number(num) ? '#ce7e4f' : '#dad9d4'};
+              color: {currentFingerDemo === Number(num) ? '#fff' : '#3d3929'};
+            "
+            onclick={() => handleFingerClick(Number(num))}
+          >
+            <span class="text-[1.2rem] font-bold">{num}</span>
+            <span class="text-[0.7rem]">{pos.label}</span>
+          </button>
+        {/each}
+      </div>
+
+      <div class="text-center mb-4">
+        <button
+          class="px-5 py-2 rounded-lg text-[0.85rem] font-medium cursor-pointer border-none transition-opacity"
+          style="background: #3d3929; color: #fff; opacity: {isPlayingSequence ? '0.5' : '1'};"
+          onclick={playFingerSequence}
+          disabled={isPlayingSequence}
+        >
+          Play All Fingers {showRightHand ? '1→5' : '5→1'}
+        </button>
+      </div>
+
+      <!-- Show current finger info -->
+      {#if currentFingerDemo !== null}
+        <div class="text-center p-3 bg-[#fdf6ee] rounded-md border border-[#f0dcc8]">
+          <p class="text-[0.9rem] font-medium text-navy">
+            Finger {currentFingerDemo}: {currentPosition[currentFingerDemo]?.finger}
+          </p>
+          <p class="text-[0.8rem] text-[#6b6455]">
+            plays note {currentPosition[currentFingerDemo]?.label}
+          </p>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Keyboard showing C position -->
+    <VirtualKeyboard
+      startOctave={showRightHand ? 4 : 3}
+      endOctave={showRightHand ? 4 : 3}
+      highlightKeys={highlightedKeys}
+      {activeKey}
+      onNotePlay={handleNotePlay}
+    />
+
+    <p class="text-[0.85rem] text-[#6b6455] mt-3 text-center">
+      The highlighted keys show where each finger rests in C position.
+    </p>
+  </section>
+
+  <!-- Section 5: Fingering in Sheet Music -->
+  <section class="mb-10">
+    <h2 class="text-[1.25rem] font-bold text-navy mb-3">Reading Finger Numbers in Music</h2>
+    <p class="text-[0.95rem] text-[#444] leading-relaxed mb-4">
+      When you see printed piano music, you will often find small numbers written next to the notes.
+      These are fingering suggestions — they tell you which finger to use for that note.
+    </p>
+
+    <!-- Example notation -->
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-5 mb-4">
+      <p class="text-[0.85rem] font-semibold text-navy mb-3">Example: Fingered Notes</p>
+      <svg viewBox="0 0 400 100" width="100%" style="max-width: 400px;" class="mx-auto block">
+        <!-- Staff lines -->
+        <line x1="20" y1="30" x2="380" y2="30" stroke="#999" stroke-width="0.8" />
+        <line x1="20" y1="40" x2="380" y2="40" stroke="#999" stroke-width="0.8" />
+        <line x1="20" y1="50" x2="380" y2="50" stroke="#999" stroke-width="0.8" />
+        <line x1="20" y1="60" x2="380" y2="60" stroke="#999" stroke-width="0.8" />
+        <line x1="20" y1="70" x2="380" y2="70" stroke="#999" stroke-width="0.8" />
+
+        <!-- C (ledger line) with finger 1 -->
+        <line x1="65" y1="80" x2="95" y2="80" stroke="#333" stroke-width="1" />
+        <ellipse cx="80" cy="80" rx="8" ry="5.5" fill="#3d3929" transform="rotate(-15, 80, 80)" />
+        <text x="80" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#ce7e4f">1</text>
+
+        <!-- D with finger 2 -->
+        <ellipse cx="145" cy="75" rx="8" ry="5.5" fill="#3d3929" transform="rotate(-15, 145, 75)" />
+        <text x="145" y="91" text-anchor="middle" font-size="12" font-weight="bold" fill="#ce7e4f">2</text>
+
+        <!-- E (on first line) with finger 3 -->
+        <ellipse cx="210" cy="70" rx="8" ry="5.5" fill="#3d3929" transform="rotate(-15, 210, 70)" />
+        <text x="210" y="86" text-anchor="middle" font-size="12" font-weight="bold" fill="#ce7e4f">3</text>
+
+        <!-- F (first space) with finger 4 -->
+        <ellipse cx="275" cy="65" rx="8" ry="5.5" fill="#3d3929" transform="rotate(-15, 275, 65)" />
+        <text x="275" y="81" text-anchor="middle" font-size="12" font-weight="bold" fill="#ce7e4f">4</text>
+
+        <!-- G (second line) with finger 5 -->
+        <ellipse cx="340" cy="60" rx="8" ry="5.5" fill="#3d3929" transform="rotate(-15, 340, 60)" />
+        <text x="340" y="76" text-anchor="middle" font-size="12" font-weight="bold" fill="#ce7e4f">5</text>
+
+        <!-- Note labels -->
+        <text x="80" y="20" text-anchor="middle" font-size="10" fill="#6b6455">C</text>
+        <text x="145" y="20" text-anchor="middle" font-size="10" fill="#6b6455">D</text>
+        <text x="210" y="20" text-anchor="middle" font-size="10" fill="#6b6455">E</text>
+        <text x="275" y="20" text-anchor="middle" font-size="10" fill="#6b6455">F</text>
+        <text x="340" y="20" text-anchor="middle" font-size="10" fill="#6b6455">G</text>
+      </svg>
+      <p class="text-[0.8rem] text-[#6b6455] text-center mt-3">
+        The orange numbers below each note indicate which finger to use (right hand, C position).
+      </p>
+    </div>
+
+    <p class="text-[0.95rem] text-[#444] leading-relaxed">
+      Not every note in a piece will have a finger number written on it — usually they appear at the
+      beginning of a passage, at position changes, and wherever the fingering might not be obvious.
+      Once you know the position, you can figure out the rest.
+    </p>
+  </section>
+
+  <!-- Section 6: Common Mistakes -->
+  <section class="mb-10">
+    <h2 class="text-[1.25rem] font-bold text-navy mb-3">Common Mistakes to Avoid</h2>
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-5">
+      <div class="space-y-3">
+        <div class="flex gap-3 items-start">
+          <span class="text-wrong font-bold shrink-0">✗</span>
+          <p class="text-[0.9rem] text-[#444]">
+            <strong>Flat fingers</strong> — Playing with fingers straight and flat makes it hard to
+            control each key independently. Keep them curved.
+          </p>
+        </div>
+        <div class="flex gap-3 items-start">
+          <span class="text-wrong font-bold shrink-0">✗</span>
+          <p class="text-[0.9rem] text-[#444]">
+            <strong>Collapsed knuckles</strong> — If your first knuckle (closest to the nail) bends
+            inward, you lose power and control. Keep knuckles firm but not tense.
+          </p>
+        </div>
+        <div class="flex gap-3 items-start">
+          <span class="text-wrong font-bold shrink-0">✗</span>
+          <p class="text-[0.9rem] text-[#444]">
+            <strong>Flying fingers</strong> — Lifting unused fingers high above the keys wastes energy
+            and slows you down. Keep fingers close to the keys at all times.
+          </p>
+        </div>
+        <div class="flex gap-3 items-start">
+          <span class="text-wrong font-bold shrink-0">✗</span>
+          <p class="text-[0.9rem] text-[#444]">
+            <strong>Tense shoulders</strong> — Tension in the shoulders travels down to the hands.
+            Drop your shoulders, breathe, and stay relaxed.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quiz -->
+  <section class="mb-10">
+    <h2 class="text-[1.25rem] font-bold text-navy mb-4">Quiz: Finger Numbers</h2>
+    <QuizEngine
+      {questions}
+      onComplete={handleQuizComplete}
+    >
+      {#snippet children({ currentQuestion, questionIndex })}
+        <p class="text-[0.95rem] text-navy font-medium mb-1">
+          Question {questionIndex + 1} of {questions.length}
+        </p>
+        <p class="text-[1.1rem] text-[#333] text-center mb-6">
+          {currentQuestion.prompt}
+        </p>
+      {/snippet}
+    </QuizEngine>
   </section>
 </LessonLayout>

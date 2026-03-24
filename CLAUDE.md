@@ -6,6 +6,9 @@
 npm run dev      # Vite dev server (default http://localhost:5173)
 npm run build    # Production build → dist/
 npm run preview  # Preview production build locally
+npm run test     # Vitest — run all tests once
+npm run test:watch  # Vitest — watch mode
+npm run check    # TypeScript type-check (tsc --noEmit)
 ```
 
 ## Tech Stack
@@ -15,44 +18,70 @@ npm run preview  # Preview production build locally
 - **@sveltejs/vite-plugin-svelte 5**
 - **Tailwind CSS v4** (`@tailwindcss/vite` plugin — no `tailwind.config.js`, CSS-based config via `@theme`)
 - **TypeScript** (strict mode, bundler module resolution)
-- No SvelteKit, no testing framework, no external UI library
+- **Vitest 4** (jsdom environment, inline config in `vite.config.ts`)
+- No SvelteKit, no external UI library
 
 ## Project Structure
 
 ```
 klavier/
-├── index.html              # Vite HTML entry (Google Fonts: Inter, Space Grotesk, Noto Music)
-├── vite.config.ts          # Registers svelte() + tailwindcss() plugins
+├── index.html              # Vite HTML entry (Google Fonts, OG/Twitter meta, JSON-LD, favicons)
+├── vite.config.ts          # Registers svelte() + tailwindcss() plugins + vitest config
 ├── tsconfig.json           # strict, bundler moduleResolution, skipLibCheck
 ├── package.json
+├── vercel.json             # Vercel deploy config + security headers (CSP, X-Frame-Options)
+├── public/
+│   ├── _headers            # Netlify/Cloudflare security headers
+│   ├── favicon.svg         # SVG favicon (piano keys in brand colors)
+│   ├── favicon.ico         # 32x32 ICO favicon
+│   ├── favicon-192.png     # 192x192 PNG icon (PWA)
+│   ├── favicon-512.png     # 512x512 PNG icon (PWA)
+│   ├── apple-touch-icon.png # 180x180 Apple touch icon
+│   ├── og-image.png        # 1200x630 Open Graph image
+│   └── site.webmanifest    # PWA manifest
+├── sprints/
+│   └── sprint-2-production-hardening.md  # Sprint tracker with task checkboxes
 └── src/
     ├── main.ts             # mount() entry point — Svelte 5 style
-    ├── app.css             # @import "tailwindcss" + @theme tokens + @layer base
-    ├── App.svelte          # Root: sticky header, Sidebar, main content, footer; hash-router switch
-    ├── router.svelte.ts    # Class-based hash router ($state) — routes: /, /lesson-N, /practice, /songs
+    ├── app.css             # @import "tailwindcss" + @theme tokens + @layer base + skip-link + sr-only
+    ├── App.svelte          # Root: skip-link, sticky header, Sidebar, main content, footer; hash-router switch; focus management on route change
+    ├── router.svelte.ts    # Class-based hash router ($state) — routes: /, /lesson-N, /practice, /songs, /privacy, /terms, /settings
     ├── pages/
-    │   ├── Home.svelte     # Dashboard: progress stats, continue/practice CTAs, module cards
-    │   ├── Practice.svelte # Free practice (virtual keyboard)
-    │   └── Songs.svelte    # Song library page
+    │   ├── Home.svelte          # Dashboard: progress stats, continue/practice CTAs, module cards
+    │   ├── Practice.svelte      # Free practice (virtual keyboard)
+    │   ├── Songs.svelte         # Song library page
+    │   ├── PrivacyPolicy.svelte # GDPR privacy policy page
+    │   ├── TermsOfService.svelte # Terms of service page
+    │   └── Settings.svelte      # Settings: consent management, data export/delete
     ├── lessons/
-    │   └── Lesson1.svelte … Lesson18.svelte  # One file per lesson
+    │   └── Lesson1.svelte … Lesson18.svelte  # One file per lesson (lazy-loaded via AsyncLesson)
     ├── components/
-    │   ├── LessonLayout.svelte    # Shared lesson shell: breadcrumb, title, objectives, nav buttons
-    │   ├── Sidebar.svelte         # Sticky desktop sidebar + mobile slide-in drawer
-    │   ├── VirtualKeyboard.svelte # Interactive piano keyboard (% width, highlight/active)
-    │   ├── Staff.svelte           # SVG treble clef staff — single note display
-    │   ├── SongStaff.svelte       # SVG staff for multi-note song playback
-    │   ├── QuizEngine.svelte      # Reusable quiz runner (questions[], snippet for prompt area)
-    │   ├── ChordDiagram.svelte    # Chord shape display
-    │   ├── Metronome.svelte       # BPM metronome (uses playClick)
-    │   ├── RhythmTrainer.svelte   # Tap-along rhythm exercise
-    │   ├── SightReadingExercise.svelte  # Sight-reading drill
-    │   ├── IntervalTrainer.svelte # Interval identification exercise
-    │   └── EarTraining.svelte     # Ear training component
+    │   ├── AsyncLesson.svelte         # Lazy-load wrapper — dynamic import() + {#await} loading/error states
+    │   ├── LessonLayout.svelte        # Shared lesson shell: breadcrumb, title, objectives, nav buttons
+    │   ├── Sidebar.svelte             # Sticky desktop sidebar + mobile slide-in drawer (focus trap, Escape close)
+    │   ├── VirtualKeyboard.svelte     # Interactive piano keyboard (% width, highlight/active, keyboard shortcuts A-J + W E T Y U)
+    │   ├── Staff.svelte               # SVG treble clef staff — single note display
+    │   ├── SongStaff.svelte           # SVG staff for multi-note song playback (role="img" + aria-label)
+    │   ├── QuizEngine.svelte          # Reusable quiz runner (questions[], snippet for prompt area, aria-live feedback)
+    │   ├── ChordDiagram.svelte        # Chord shape display
+    │   ├── Metronome.svelte           # BPM metronome (uses playClick)
+    │   ├── RhythmTrainer.svelte       # Tap-along rhythm exercise
+    │   ├── SightReadingExercise.svelte # Sight-reading drill
+    │   ├── IntervalTrainer.svelte     # Interval identification exercise
+    │   └── EarTraining.svelte         # Ear training component
     ├── stores/
-    │   ├── progress.svelte.ts  # Class-based $state store — persists to localStorage
+    │   ├── progress.svelte.ts  # Class-based $state store — persists to localStorage (consent-gated, schema versioned)
+    │   ├── consent.svelte.ts   # GDPR consent state — accept/decline/revoke, policy version tracking
     │   ├── sidebar.svelte.ts   # Sidebar open/close state
-    │   └── audio.ts            # Web Audio API piano synth
+    │   └── audio.ts            # Web Audio API piano synth (null-safe guards)
+    ├── __tests__/
+    │   ├── lessons.test.ts     # Data module tests (MODULES, LESSONS, lookups)
+    │   ├── notes.test.ts       # Note data tests (TREBLE_NOTES, SHARP_NOTES, generatePianoKeys)
+    │   ├── songs.test.ts       # Song data tests (structure, note ID validation)
+    │   ├── consent.test.ts     # Consent store state transitions + persistence
+    │   ├── progress.test.ts    # Progress store: consent gating, schema migration, math
+    │   ├── audio.test.ts       # Audio engine graceful degradation
+    │   └── router.test.ts      # Hash parsing, route getters, bounds checking
     └── data/
         ├── lessons.ts   # LessonMeta interface, MODULES (6), LESSONS (18), lookup helpers
         ├── notes.ts     # Note interface, TREBLE_NOTES, SHARP_NOTES, ALL_NOTES, generatePianoKeys
@@ -162,5 +191,49 @@ Hash-based class with `$state`:
 - `router.isHome` → `#/`
 - `router.isPractice` → `#/practice`
 - `router.isSongs` → `#/songs`
-- `router.lessonId` → `number | null` (from `#/lesson-N`)
+- `router.isPrivacy` → `#/privacy`
+- `router.isTerms` → `#/terms`
+- `router.isSettings` → `#/settings`
+- `router.lessonId` → `number | null` (from `#/lesson-N`, bounds-checked 1–18)
 - `router.navigate(path)` — sets `window.location.hash`
+
+## Accessibility
+
+- Skip-to-content link (`<a class="skip-link">`) targets `<main id="main-content">`
+- Focus management: on route change, focus moves to the `<h1>` in main content
+- Mobile sidebar: focus trap (Tab/Shift+Tab cycling, Escape to close, returns focus to hamburger)
+- `QuizEngine`: `aria-live="polite"` region announces correct/incorrect feedback
+- `VirtualKeyboard`: keyboard shortcuts (A–J for naturals, W E T Y U for sharps)
+- Heading hierarchy: h1 → h2 → h3 with no skips
+- All interactive elements are `<button>` or `<a>`, not `<div onclick>`
+- `.sr-only` utility class in `app.css` for screen-reader-only text
+
+## Consent & Privacy (`src/stores/consent.svelte.ts`)
+
+- localStorage key: `klavier-consent`
+- States: `pending` → `accepted` | `declined`
+- `consent.accept()`, `consent.decline()`, `consent.revoke()`
+- Policy version tracked — re-prompts if version changes
+- Declining consent clears all progress data from localStorage
+- All progress store mutations are gated on `consent.status === 'accepted'`
+
+## Testing
+
+- **Vitest 4** with `jsdom` environment, config inline in `vite.config.ts`
+- Tests in `src/__tests__/*.test.ts` — 91 tests across 7 files
+- Run: `npm run test` (single run) or `npm run test:watch` (watch mode)
+- Svelte 5 runes-based stores work in tests via `@sveltejs/vite-plugin-svelte` transform
+
+## Security & Deployment
+
+- CSP + security headers delivered server-side via `public/_headers` (Netlify/Cloudflare) and `vercel.json` (Vercel)
+- No CSP meta tag in index.html (conflicts with Vite dev/preview)
+- `X-Content-Type-Options: nosniff` meta tag in index.html
+- localStorage schema versioning with migration support (`SCHEMA_VERSION` in progress store)
+
+## Lazy Loading
+
+- Lessons are lazy-loaded via `AsyncLesson.svelte` using dynamic `import()`
+- Each lesson is a separate Vite chunk (~4–13 KB each)
+- `{#key router.lessonId}` forces re-mount when switching lessons
+- Loading spinner + error state with reload button

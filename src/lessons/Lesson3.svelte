@@ -1,59 +1,15 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import SongStaff from '../components/SongStaff.svelte';
-  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
-  import Metronome from '../components/Metronome.svelte';
+  import Staff from '../components/Staff.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
-  import { getSongsByLesson } from '../data/songs';
-  import { getNoteById } from '../data/notes';
-  import { playNote, playSequence } from '../stores/audio';
+  import { TREBLE_NOTES, ALL_LETTERS, STAFF_LINES, CLEF_FONT_SIZE } from '../data/notes';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(3)!;
-  const songs = getSongsByLesson(3);
-  const odeToJoy = songs[0]; // Ode to Joy
 
   let showQuiz = $state(false);
-  let isPlaying = $state(false);
-  let highlightIndex = $state(-1);
-  let playbackStop: { stop: () => void } | null = null;
-
-  function playMelody() {
-    if (isPlaying && playbackStop) {
-      playbackStop.stop();
-      isPlaying = false;
-      highlightIndex = -1;
-      return;
-    }
-
-    // Get all notes from all lines
-    const allNotes = odeToJoy.lines.flat();
-    const noteSequence = allNotes.map(id => {
-      const note = getNoteById(id);
-      return { midiNote: note?.midiNote ?? 60, duration: 1 };
-    });
-
-    isPlaying = true;
-    playbackStop = playSequence(noteSequence, odeToJoy.bpm, (index) => {
-      highlightIndex = index;
-    });
-
-    // Auto-stop after sequence finishes
-    const totalDuration = noteSequence.length * (60 / odeToJoy.bpm) * 1000;
-    setTimeout(() => {
-      isPlaying = false;
-      highlightIndex = -1;
-    }, totalDuration + 200);
-  }
-
-  // Quiz: note duration identification
-  const durationTypes = [
-    { name: 'Whole note', beats: '4', shape: 'whole' },
-    { name: 'Half note', beats: '2', shape: 'half' },
-    { name: 'Quarter note', beats: '1', shape: 'quarter' },
-  ];
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -64,265 +20,206 @@
     return a;
   }
 
-  function generateDurationQuestions(): QuizQuestion[] {
-    // All 3 types once, then 2 random extras = 5 questions
-    const base = shuffle(durationTypes);
-    const extras = shuffle(durationTypes).slice(0, 2);
-    return [...base, ...extras].map((dt, i) => ({
-      id: `q${i}-${dt.shape}`,
-      prompt: `How many beats does a ${dt.name.toLowerCase()} get in 4/4 time?`,
-      correctAnswer: dt.beats,
-      choices: shuffle(['1', '2', '3', '4']),
-    }));
+  function generateQuestions(): { questions: QuizQuestion[]; noteMap: Record<string, number> } {
+    const questions: QuizQuestion[] = [];
+    const noteMap: Record<string, number> = {};
+    const pool = [...TREBLE_NOTES];
+    const picked = shuffle(pool).slice(0, 10);
+
+    for (let i = 0; i < picked.length; i++) {
+      const note = picked[i];
+      const distractors = shuffle(ALL_LETTERS.filter(l => l !== note.name)).slice(0, 3);
+      const qId = `q${i}-${note.id}`;
+      noteMap[qId] = note.yPos;
+      questions.push({
+        id: qId,
+        prompt: 'What note is this?',
+        correctAnswer: note.name,
+        choices: shuffle([note.name, ...distractors]),
+      });
+    }
+    return { questions, noteMap };
   }
 
-  let quizQuestions = $state(generateDurationQuestions());
+  let quizData = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(3, score, total, 0);
+    progress.saveQuizScore(2, score, total, 0);
   }
 
   function startQuiz() {
-    quizQuestions = generateDurationQuestions();
+    quizData = generateQuestions();
     showQuiz = true;
-  }
-
-  // Render note shape based on question id
-  function renderNoteShape(shapeType: string, size: number = 60) {
-    if (shapeType === 'whole') {
-      // Whole note: open oval, no stem
-      return `
-        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display: inline-block; margin: 0 auto;">
-          <ellipse cx="${size / 2}" cy="${size / 2}" rx="${size * 0.3}" ry="${size * 0.25}" fill="none" stroke="#3d3929" stroke-width="2"/>
-        </svg>
-      `;
-    } else if (shapeType === 'half') {
-      // Half note: open oval + stem
-      return `
-        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display: inline-block; margin: 0 auto;">
-          <ellipse cx="${size * 0.35}" cy="${size * 0.65}" rx="${size * 0.25}" ry="${size * 0.2}" fill="none" stroke="#3d3929" stroke-width="2"/>
-          <line x1="${size * 0.55}" y1="${size * 0.65}" x2="${size * 0.55}" y2="${size * 0.15}" stroke="#3d3929" stroke-width="1.5"/>
-        </svg>
-      `;
-    } else {
-      // Quarter note: filled oval + stem
-      return `
-        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display: inline-block; margin: 0 auto;">
-          <ellipse cx="${size * 0.35}" cy="${size * 0.65}" rx="${size * 0.25}" ry="${size * 0.2}" fill="#3d3929"/>
-          <line x1="${size * 0.55}" y1="${size * 0.65}" x2="${size * 0.55}" y2="${size * 0.15}" stroke="#3d3929" stroke-width="1.5"/>
-        </svg>
-      `;
-    }
   }
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: Note Durations -->
+  <!-- Section 1: The Staff -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Note Durations</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Five-Line Staff</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      Music is written on a five-line staff. The lines are numbered from bottom to top as 1, 2, 3, 4, 5. Between the lines are four spaces, also numbered from bottom to top as 1, 2, 3, 4. Together, the five lines and four spaces give us nine different positions for notes.
+    </p>
     <p class="text-[#444] leading-[1.7] mb-4">
-      Musical notes don't all sound for the same length of time. Each note has a duration that tells you how long to hold it. The shape of the note tells you how many beats it lasts.
+      Look at an empty staff below — just five horizontal lines:
     </p>
-
-    <div class="grid grid-cols-3 gap-6 mb-6">
-      <!-- Whole note -->
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] text-center">
-        <div class="mb-4 flex justify-center">
-          <svg viewBox="0 0 80 60" width="80" height="60">
-            <ellipse cx="40" cy="30" rx="20" ry="15" fill="none" stroke="#3d3929" stroke-width="2" />
-          </svg>
-        </div>
-        <p class="font-bold text-navy mb-2">Whole Note</p>
-        <p class="text-sm text-[#666]"><strong>4 beats</strong></p>
-        <p class="text-xs text-[#999] mt-2">An open oval, no stem</p>
-      </div>
-
-      <!-- Half note -->
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] text-center">
-        <div class="mb-4 flex justify-center">
-          <svg viewBox="0 0 80 60" width="80" height="60">
-            <ellipse cx="30" cy="38" rx="18" ry="14" fill="none" stroke="#3d3929" stroke-width="2" />
-            <line x1="48" y1="38" x2="48" y2="10" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <p class="font-bold text-navy mb-2">Half Note</p>
-        <p class="text-sm text-[#666]"><strong>2 beats</strong></p>
-        <p class="text-xs text-[#999] mt-2">Open oval with a stem</p>
-      </div>
-
-      <!-- Quarter note -->
-      <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] text-center">
-        <div class="mb-4 flex justify-center">
-          <svg viewBox="0 0 80 60" width="80" height="60">
-            <ellipse cx="30" cy="38" rx="18" ry="14" fill="#3d3929" />
-            <line x1="48" y1="38" x2="48" y2="10" stroke="#3d3929" stroke-width="1.5" />
-          </svg>
-        </div>
-        <p class="font-bold text-navy mb-2">Quarter Note</p>
-        <p class="text-sm text-[#666]"><strong>1 beat</strong></p>
-        <p class="text-xs text-[#999] mt-2">Filled oval with a stem</p>
-      </div>
-    </div>
-
-    <p class="text-[#444] leading-[1.7] text-sm bg-[#fef3ee] border-l-4 border-purple px-4 py-3 rounded">
-      💡 <strong>Memory tip:</strong> The more filled in the note looks, the shorter it lasts. A whole note is empty (4 beats), a half note is empty (2 beats), and a quarter note is filled (1 beat).
-    </p>
-  </section>
-
-  <!-- Section 2: Counting Beats -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Counting Beats in 4/4 Time</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      In <strong>4/4 time</strong> (also called "common time"), there are <strong>4 beats per measure</strong>. Let's see how different notes fit:
-    </p>
-
-    <div class="space-y-6">
-      <!-- Measure 1: 4 quarter notes -->
-      <div class="bg-white rounded-lg p-5 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-3">Measure 1: Four Quarter Notes = 4 Beats</p>
-        <div class="mb-3 flex items-center justify-center gap-8">
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="30" cy="35" rx="12" ry="9" fill="#3d3929" />
-              <line x1="42" y1="35" x2="42" y2="12" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">1</p>
-          </div>
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="30" cy="35" rx="12" ry="9" fill="#3d3929" />
-              <line x1="42" y1="35" x2="42" y2="12" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">2</p>
-          </div>
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="30" cy="35" rx="12" ry="9" fill="#3d3929" />
-              <line x1="42" y1="35" x2="42" y2="12" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">3</p>
-          </div>
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="30" cy="35" rx="12" ry="9" fill="#3d3929" />
-              <line x1="42" y1="35" x2="42" y2="12" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">4</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Measure 2: 2 half notes -->
-      <div class="bg-white rounded-lg p-5 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-3">Measure 2: Two Half Notes = 4 Beats</p>
-        <div class="mb-3 flex items-center justify-center gap-12">
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="25" cy="35" rx="14" ry="11" fill="none" stroke="#3d3929" stroke-width="1.5" />
-              <line x1="39" y1="35" x2="39" y2="10" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">1 & 2</p>
-          </div>
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="25" cy="35" rx="14" ry="11" fill="none" stroke="#3d3929" stroke-width="1.5" />
-              <line x1="39" y1="35" x2="39" y2="10" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">3 & 4</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Measure 3: 1 whole note -->
-      <div class="bg-white rounded-lg p-5 border border-[#e8e6e0]">
-        <p class="text-sm font-semibold text-navy mb-3">Measure 3: One Whole Note = 4 Beats</p>
-        <div class="mb-3 flex items-center justify-center">
-          <div class="text-center">
-            <svg viewBox="0 0 60 60" width="50" height="50">
-              <ellipse cx="30" cy="30" rx="16" ry="12" fill="none" stroke="#3d3929" stroke-width="1.5" />
-            </svg>
-            <p class="text-[0.85rem] text-[#666] mt-1">1, 2, 3, 4</p>
-          </div>
-        </div>
-      </div>
+    <div class="flex justify-center mb-4">
+      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
+        <!-- Staff lines only -->
+        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
+      </svg>
     </div>
   </section>
 
-  <!-- Section 3: Your First Melody - Ode to Joy -->
+  <!-- Section 2: The Treble Clef -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Your First Melody: Ode to Joy</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Now you're ready to read and play your first melody! "Ode to Joy" by Beethoven is one of the most famous melodies in the world. Watch as the notes light up when you press play, and listen to how they sound together.
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Treble Clef</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      At the beginning of every staff you'll see a symbol called the <strong>treble clef</strong> (also called the G clef). The curl of this symbol wraps around the second line from the bottom, which is the note <strong>G</strong>. This is how the treble clef got its name — it marks where G is on the staff.
     </p>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Here's a staff with the treble clef and a G note highlighted:
+    </p>
+    <div class="flex justify-center mb-4">
+      <div style="max-width: 500px;">
+        <Staff yPos={100} />
+      </div>
+    </div>
+    <p class="text-[#444] leading-[1.7]">
+      The note shown above is <strong>G4</strong> — it sits right on the line that the treble clef's curl marks.
+    </p>
+  </section>
 
-    <!-- Melody display -->
-    {#if odeToJoy}
-      {#each odeToJoy.lines as line, lineIdx}
-        {@const lineStart = odeToJoy.lines.slice(0, lineIdx).reduce((sum, l) => sum + l.length, 0)}
-        {@const localIndex = highlightIndex >= lineStart && highlightIndex < lineStart + line.length ? highlightIndex - lineStart : -1}
-        <div class="mb-6">
-          <p class="text-sm text-[#999] mb-2">Line {lineIdx + 1}</p>
-          <SongStaff notes={line} highlightIndex={localIndex} />
-        </div>
-      {/each}
-
-      <!-- Play button -->
-      <button
-        class="bg-purple text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity mb-6"
-        onclick={playMelody}
-      >
-        {isPlaying ? 'Stop Playback' : 'Play Melody'}
-      </button>
-    {/if}
-
-    <!-- Metronome -->
-    <div class="mt-6">
-      <p class="text-sm font-semibold text-navy mb-3">Practice with a steady beat:</p>
-      <Metronome initialBpm={odeToJoy?.bpm || 100} />
+  <!-- Section 3: Notes on Lines -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Notes on the Lines</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      In the treble clef, the notes that sit on the five lines are: <strong>E, G, B, D, F</strong> (from bottom to top). A classic memory aid is: <strong>"Every Good Boy Does Fine"</strong>.
+    </p>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Here are all five line notes shown together:
+    </p>
+    <div class="flex justify-center mb-4">
+      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
+        <!-- Staff lines -->
+        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
+        <!-- Treble clef -->
+        <text x="42" y="128" font-size="105" font-family="Noto Music" fill="#3d3929">𝄞</text>
+        <!-- Note heads on lines with labels -->
+        <!-- E4 (y=120) -->
+        <ellipse cx="280" cy="120" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="280" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">E</text>
+        <!-- G4 (y=100) -->
+        <ellipse cx="320" cy="100" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="320" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">G</text>
+        <!-- B4 (y=80) -->
+        <ellipse cx="360" cy="80" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="360" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">B</text>
+        <!-- D5 (y=60) -->
+        <ellipse cx="400" cy="60" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="400" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">D</text>
+        <!-- F5 (y=40) -->
+        <ellipse cx="440" cy="40" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="440" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">F</text>
+      </svg>
     </div>
   </section>
 
-  <!-- Section 4: Try It Yourself -->
+  <!-- Section 4: Notes on Spaces -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Try It Yourself</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Now it's your turn! The keyboard below shows all the notes used in Ode to Joy. Try to play the melody yourself, starting with the first line (E E F G). The virtual keyboard will highlight the keys you need.
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Notes in the Spaces</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      The four spaces between the lines contain the notes: <strong>F, A, C, E</strong> (from bottom to top). These spell the word <strong>"FACE"</strong> — easy to remember!
     </p>
-
-    {#if odeToJoy}
-      <div class="mb-4">
-        <p class="text-sm font-semibold text-navy mb-2">Note sequence for Line 1:</p>
-        <p class="text-[#666] text-sm font-mono bg-white px-4 py-2 rounded border border-[#e8e6e0]">
-          {odeToJoy.lines[0].join(' → ')}
-        </p>
-      </div>
-
-      <VirtualKeyboard
-        startOctave={3}
-        endOctave={4}
-        showLabels={true}
-        highlightKeys={[...new Set(odeToJoy.lines.flat())]}
-        onNotePlay={(note, midi) => { playNote(midi); }}
-      />
-    {/if}
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Here are all four space notes:
+    </p>
+    <div class="flex justify-center mb-4">
+      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
+        <!-- Staff lines -->
+        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
+        <!-- Treble clef -->
+        <text x="42" y="128" font-size="105" font-family="Noto Music" fill="#3d3929">𝄞</text>
+        <!-- Note heads in spaces with labels -->
+        <!-- F4 (y=110, space below) -->
+        <ellipse cx="280" cy="110" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="280" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">F</text>
+        <!-- A4 (y=90, space) -->
+        <ellipse cx="320" cy="90" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="320" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">A</text>
+        <!-- C5 (y=70, space) -->
+        <ellipse cx="360" cy="70" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="360" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">C</text>
+        <!-- E5 (y=50, space above) -->
+        <ellipse cx="400" cy="50" rx="10" ry="7" fill="none" stroke="#3d3929" stroke-width="1.5" />
+        <text x="400" y="145" font-size="14" text-anchor="middle" fill="#3d3929" font-weight="bold">E</text>
+      </svg>
+    </div>
   </section>
 
-  <!-- Section 5: Quiz -->
+  <!-- Section 5: Ledger Lines -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Ledger Lines</h2>
+    <p class="text-[#444] leading-[1.7] mb-3">
+      What about notes that go higher or lower than the staff? We use short extra lines called <strong>ledger lines</strong>. Each ledger line works the same way — a note sits on it or in a space between ledger lines.
+    </p>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Here's an example with a high note (F5) and a low note (C4):
+    </p>
+    <div class="flex justify-center mb-4">
+      <svg viewBox="0 -15 500 200" width="100%" style="max-width: 500px;">
+        <!-- Ledger line above staff (F5) -->
+        <line x1="40" y1="30" x2="460" y2="30" stroke="#3d3929" stroke-width="1" opacity="0.5" />
+        <!-- Staff lines -->
+        <line x1="40" y1="40" x2="460" y2="40" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="60" x2="460" y2="60" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="80" x2="460" y2="80" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="100" x2="460" y2="100" stroke="#3d3929" stroke-width="1" />
+        <line x1="40" y1="120" x2="460" y2="120" stroke="#3d3929" stroke-width="1" />
+        <!-- Ledger line below staff (C4) -->
+        <line x1="40" y1="130" x2="460" y2="130" stroke="#3d3929" stroke-width="1" opacity="0.5" />
+        <!-- Treble clef -->
+        <text x="42" y="128" font-size="105" font-family="Noto Music" fill="#3d3929">𝄞</text>
+        <!-- High note F5 on ledger line -->
+        <ellipse cx="280" cy="30" rx="10" ry="7" fill="none" stroke="#ce7e4f" stroke-width="2" />
+        <text x="280" y="155" font-size="14" text-anchor="middle" fill="#ce7e4f" font-weight="bold">F5</text>
+        <!-- Low note C4 on ledger line -->
+        <ellipse cx="400" cy="130" rx="10" ry="7" fill="none" stroke="#ce7e4f" stroke-width="2" />
+        <text x="400" y="155" font-size="14" text-anchor="middle" fill="#ce7e4f" font-weight="bold">C4</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Section 6: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test what you've learned? Identify how many beats each note gets in 4/4 time.
+        Ready to identify notes on the staff? Each question will show a note on the treble clef — pick the correct letter name.
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
         onclick={startQuiz}
       >Start Quiz</button>
     {:else}
-      <QuizEngine questions={quizQuestions} onComplete={onQuizComplete}>
+      <QuizEngine questions={quizData.questions} onComplete={onQuizComplete}>
         {#snippet children({ currentQuestion, questionIndex })}
-          <div class="mb-6 bg-white rounded-lg p-8 border border-[#e8e6e0] flex justify-center">
-            {@html renderNoteShape(currentQuestion.id.split('-')[1], 100)}
+          <div class="mb-4 flex justify-center">
+            <div style="max-width: 500px;">
+              <Staff yPos={quizData.noteMap[quizData.questions[questionIndex]?.id] || 100} />
+            </div>
           </div>
         {/snippet}
       </QuizEngine>

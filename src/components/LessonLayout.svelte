@@ -55,7 +55,7 @@
 
   <!-- Objectives -->
   <div class="bg-white rounded-lg border border-[#e8e6e0] p-5 mb-8">
-    <h3 class="text-[0.85rem] font-semibold uppercase tracking-wider text-[#b4b2a7] mb-3">What you'll learn</h3>
+    <h2 class="text-[0.85rem] font-semibold uppercase tracking-wider text-[#b4b2a7] mb-3">What you'll learn</h2>
     <ul class="space-y-1.5">
       {#each lesson.objectives as obj}
         <li class="text-[0.95rem] text-[#444] flex items-start gap-2">

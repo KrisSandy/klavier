@@ -13,12 +13,12 @@ export interface LessonMeta {
 }
 
 export const MODULES = [
-  { id: 1, name: 'The Keyboard & First Notes', lessons: [1, 2, 3] },
-  { id: 2, name: 'Both Hands & Scales', lessons: [4, 5, 6] },
-  { id: 3, name: 'Rhythm & Dynamics', lessons: [7, 8, 9] },
-  { id: 4, name: 'Chords & Harmony', lessons: [10, 11, 12] },
-  { id: 5, name: 'Sight-Reading & Fluency', lessons: [13, 14, 15] },
-  { id: 6, name: 'Expression & Performance', lessons: [16, 17, 18] },
+  { id: 1, name: 'The Keyboard & First Notes', lessons: [1, 2, 3, 4] },
+  { id: 2, name: 'Both Hands & Scales', lessons: [5, 6, 7] },
+  { id: 3, name: 'Rhythm & Dynamics', lessons: [8, 9, 10] },
+  { id: 4, name: 'Chords & Harmony', lessons: [11, 12, 13] },
+  { id: 5, name: 'Sight-Reading & Fluency', lessons: [14, 15, 16] },
+  { id: 6, name: 'Expression & Performance', lessons: [17, 18, 19] },
 ];
 
 export const LESSONS: LessonMeta[] = [
@@ -43,6 +43,23 @@ export const LESSONS: LessonMeta[] = [
   {
     id: 2,
     slug: 'lesson-2',
+    title: 'Finger Numbers & Hand Position',
+    subtitle: 'The universal finger numbering system and C position',
+    module: 1,
+    moduleName: 'The Keyboard & First Notes',
+    objectives: [
+      'Know the finger numbering system (1–5) for both hands',
+      'Understand proper hand position and curved fingers',
+      'Play in C position with the right and left hand',
+      'Read finger numbers in sheet music',
+    ],
+    hasQuiz: true,
+    hasPractice: true,
+    hasSong: false,
+  },
+  {
+    id: 3,
+    slug: 'lesson-3',
     title: 'Reading Music',
     subtitle: 'The treble clef and the staff',
     module: 1,
@@ -58,8 +75,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: false,
   },
   {
-    id: 3,
-    slug: 'lesson-3',
+    id: 4,
+    slug: 'lesson-4',
     title: 'Reading a Melody',
     subtitle: 'Note durations and your first melody',
     module: 1,
@@ -74,8 +91,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 4,
-    slug: 'lesson-4',
+    id: 5,
+    slug: 'lesson-5',
     title: 'The Left Hand & C Major',
     subtitle: 'Bass clef and your first scale',
     module: 2,
@@ -90,8 +107,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: false,
   },
   {
-    id: 5,
-    slug: 'lesson-5',
+    id: 6,
+    slug: 'lesson-6',
     title: 'Learning a Piece',
     subtitle: 'Hands together for the first time',
     module: 2,
@@ -106,8 +123,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 6,
-    slug: 'lesson-6',
+    id: 7,
+    slug: 'lesson-7',
     title: 'A New Piece, G Major & Rests',
     subtitle: 'Rest symbols and the G major scale',
     module: 2,
@@ -122,8 +139,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 7,
-    slug: 'lesson-7',
+    id: 8,
+    slug: 'lesson-8',
     title: 'Eighth Notes & Counting',
     subtitle: 'Subdividing beats into eighth notes',
     module: 3,
@@ -138,8 +155,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: false,
   },
   {
-    id: 8,
-    slug: 'lesson-8',
+    id: 9,
+    slug: 'lesson-9',
     title: 'Time Signatures',
     subtitle: 'Understanding 4/4, 3/4, and 6/8',
     module: 3,
@@ -154,8 +171,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 9,
-    slug: 'lesson-9',
+    id: 10,
+    slug: 'lesson-10',
     title: 'Dynamics & Expression',
     subtitle: 'Playing with varying velocity and expression',
     module: 3,
@@ -170,8 +187,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 10,
-    slug: 'lesson-10',
+    id: 11,
+    slug: 'lesson-11',
     title: 'Building Chords',
     subtitle: 'Major triads and chord tones',
     module: 4,
@@ -186,8 +203,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: false,
   },
   {
-    id: 11,
-    slug: 'lesson-11',
+    id: 12,
+    slug: 'lesson-12',
     title: 'Chord Progressions',
     subtitle: 'Common progressions and harmonic movement',
     module: 4,
@@ -202,8 +219,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 12,
-    slug: 'lesson-12',
+    id: 13,
+    slug: 'lesson-13',
     title: 'Minor Chords & Keys',
     subtitle: 'Building and playing minor triads',
     module: 4,
@@ -218,8 +235,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 13,
-    slug: 'lesson-13',
+    id: 14,
+    slug: 'lesson-14',
     title: 'Sight-Reading Basics',
     subtitle: 'Reading music fluently at first sight',
     module: 5,
@@ -234,8 +251,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: false,
   },
   {
-    id: 14,
-    slug: 'lesson-14',
+    id: 15,
+    slug: 'lesson-15',
     title: 'Key Signatures',
     subtitle: 'Sharps, flats, and the circle of fifths',
     module: 5,
@@ -250,8 +267,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: false,
   },
   {
-    id: 15,
-    slug: 'lesson-15',
+    id: 16,
+    slug: 'lesson-16',
     title: 'Intervals',
     subtitle: 'Recognising and playing intervals from 2nds to octaves',
     module: 5,
@@ -266,8 +283,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 16,
-    slug: 'lesson-16',
+    id: 17,
+    slug: 'lesson-17',
     title: 'Pedaling & Sustain',
     subtitle: 'Using the sustain pedal for expression',
     module: 6,
@@ -282,8 +299,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 17,
-    slug: 'lesson-17',
+    id: 18,
+    slug: 'lesson-18',
     title: 'Musical Form',
     subtitle: 'Understanding structure in music',
     module: 6,
@@ -298,8 +315,8 @@ export const LESSONS: LessonMeta[] = [
     hasSong: true,
   },
   {
-    id: 18,
-    slug: 'lesson-18',
+    id: 19,
+    slug: 'lesson-19',
     title: 'Putting It All Together',
     subtitle: 'A complete performance combining everything you\'ve learned',
     module: 6,

@@ -4,12 +4,57 @@
   import { router } from '../router.svelte';
   import { sidebar } from '../stores/sidebar.svelte';
 
+  let asideEl: HTMLElement | undefined = $state(undefined);
+
   function navigateTo(path: string) {
     router.navigate(path);
     sidebar.close();
   }
+
+  // Focus trap: when mobile drawer opens, trap Tab within it; Escape closes it
+  function handleKeydown(e: KeyboardEvent) {
+    if (!sidebar.open || !asideEl) return;
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      sidebar.close();
+      // Return focus to hamburger button
+      const hamburger = document.querySelector('[aria-label="Open navigation"]') as HTMLElement | null;
+      hamburger?.focus();
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      const focusable = asideEl.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  // When drawer opens on mobile, focus the close button
+  $effect(() => {
+    if (sidebar.open && asideEl) {
+      requestAnimationFrame(() => {
+        const closeBtn = asideEl?.querySelector('[aria-label="Close navigation"]') as HTMLElement | null;
+        closeBtn?.focus();
+      });
+    }
+  });
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- Backdrop (mobile only) -->
 {#if sidebar.open}
   <div
@@ -17,14 +62,17 @@
     style="transition: opacity 0.2s ease;"
     onclick={() => sidebar.close()}
     onkeydown={(e) => { if (e.key === 'Escape') sidebar.close(); }}
-    role="button"
-    tabindex="-1"
-    aria-label="Close navigation"
+    role="presentation"
   ></div>
 {/if}
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <!-- Sidebar -->
 <aside
+  bind:this={asideEl}
+  onkeydown={handleKeydown}
+  role="navigation"
+  aria-label="Course navigation"
   class="
     sm:sticky sm:top-(--header-height) sm:w-60 sm:h-[calc(100vh-var(--header-height))]
     sm:overflow-y-auto sm:bg-[#faf9f5] sm:border-r sm:border-[#dad9d4] sm:shrink-0 sm:flex sm:flex-col
@@ -46,7 +94,7 @@
       onclick={() => sidebar.close()}
       aria-label="Close navigation"
     >
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <line x1="4" y1="4" x2="14" y2="14" />
         <line x1="14" y1="4" x2="4" y2="14" />
       </svg>

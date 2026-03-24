@@ -1,17 +1,21 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
   import SongStaff from '../components/SongStaff.svelte';
+  import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
   import { getSongsByLesson } from '../data/songs';
+  import { playNote, setReverb } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(17)!;
-  const songs = getSongsByLesson(17);
-  const song = songs[0]; // Für Elise simplified
+  const songs = getSongsByLesson(16);
+  const song = songs[0]; // Clair de Lune simplified
 
   let showQuiz = $state(false);
+  let reverbAmount = $state(0.3);
+  let activeKey = $state<string | null>(null);
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -22,67 +26,85 @@
     return a;
   }
 
+  function handleReverbChange(amount: number) {
+    reverbAmount = amount;
+    setReverb(amount);
+  }
+
+  function handleNotePlay(note: string, midiNote: number) {
+    playNote(midiNote, 1.5, 0.6);
+    activeKey = note;
+    setTimeout(() => { activeKey = null; }, 300);
+  }
+
+  // Demo: play a chord with and without sustain
+  function playWithSustain() {
+    setReverb(0.8);
+    const notes = [60, 64, 67]; // C major chord
+    notes.forEach((n, i) => {
+      setTimeout(() => playNote(n, 2, 0.5), i * 300);
+    });
+    setTimeout(() => setReverb(reverbAmount), 3000);
+  }
+
+  function playWithoutSustain() {
+    setReverb(0);
+    const notes = [60, 64, 67];
+    notes.forEach((n, i) => {
+      setTimeout(() => playNote(n, 0.3, 0.5), i * 300);
+    });
+    setTimeout(() => setReverb(reverbAmount), 2000);
+  }
+
   function generateQuestions(): QuizQuestion[] {
     return [
       {
         id: 'q1',
-        prompt: 'What is musical "form"?',
-        correctAnswer: 'The overall structure and organisation of a piece',
-        choices: shuffle(['The overall structure and organisation of a piece', 'How loud or soft to play', 'The speed of the music', 'The key signature']),
+        prompt: 'What does the sustain (damper) pedal do?',
+        correctAnswer: 'Lifts all dampers, allowing strings to vibrate freely',
+        choices: shuffle(['Lifts all dampers, allowing strings to vibrate freely', 'Makes the sound louder', 'Changes the pitch of notes', 'Plays notes automatically']),
       },
       {
         id: 'q2',
-        prompt: 'In ABA form, what happens in the third section?',
-        correctAnswer: 'The A section returns (often with variation)',
-        choices: shuffle(['The A section returns (often with variation)', 'A completely new section', 'The piece ends quietly', 'The tempo doubles']),
+        prompt: 'Which foot typically operates the sustain pedal?',
+        correctAnswer: 'Right foot',
+        choices: shuffle(['Right foot', 'Left foot', 'Either foot', 'It depends on the piece']),
       },
       {
         id: 'q3',
-        prompt: 'What is "binary form" (AB)?',
-        correctAnswer: 'Two contrasting sections',
-        choices: shuffle(['Two contrasting sections', 'Three sections with a return', 'A single repeated section', 'Four different sections']),
+        prompt: 'What is "legato pedaling"?',
+        correctAnswer: 'Pressing the pedal as you play the next note, creating seamless transitions',
+        choices: shuffle(['Pressing the pedal as you play the next note, creating seamless transitions', 'Holding the pedal throughout the entire piece', 'Using the pedal only on the first beat', 'Not using the pedal at all']),
       },
       {
         id: 'q4',
-        prompt: 'What is "ternary form" (ABA)?',
-        correctAnswer: 'Three sections where the first returns after a contrasting middle',
-        choices: shuffle(['Three sections where the first returns after a contrasting middle', 'Three completely different sections', 'Two sections repeated', 'A long introduction']),
+        prompt: 'What happens if you hold the sustain pedal too long?',
+        correctAnswer: 'Notes blur together and the sound becomes muddy',
+        choices: shuffle(['Notes blur together and the sound becomes muddy', 'The piano breaks', 'Notes get louder', 'Nothing changes']),
       },
       {
         id: 'q5',
-        prompt: 'Für Elise by Beethoven is primarily in which form?',
-        correctAnswer: 'Rondo (ABACA)',
-        choices: shuffle(['Rondo (ABACA)', 'Binary (AB)', 'Sonata form', 'Through-composed']),
+        prompt: 'The symbol "Ped." in sheet music means...',
+        correctAnswer: 'Press the sustain pedal down',
+        choices: shuffle(['Press the sustain pedal down', 'Play louder', 'Use the left pedal', 'Slow down']),
       },
       {
         id: 'q6',
-        prompt: 'What does "through-composed" mean?',
-        correctAnswer: 'New music throughout with no repeated sections',
-        choices: shuffle(['New music throughout with no repeated sections', 'A piece with many repeats', 'Music written very quickly', 'A piece with only one section']),
+        prompt: 'The asterisk (*) symbol after "Ped." means...',
+        correctAnswer: 'Release the sustain pedal',
+        choices: shuffle(['Release the sustain pedal', 'Play staccato', 'Speed up', 'Repeat the section']),
       },
       {
         id: 'q7',
-        prompt: 'A "verse-chorus" structure is most common in...',
-        correctAnswer: 'Pop and rock music',
-        choices: shuffle(['Pop and rock music', 'Classical sonatas', 'Jazz improvisation', 'Gregorian chant']),
+        prompt: 'What is the una corda (left) pedal used for?',
+        correctAnswer: 'Creating a softer, more muted tone',
+        choices: shuffle(['Creating a softer, more muted tone', 'Sustaining notes', 'Playing louder', 'Changing the key']),
       },
       {
         id: 'q8',
-        prompt: 'What is a "coda" in music?',
-        correctAnswer: 'A concluding section that brings the piece to an end',
-        choices: shuffle(['A concluding section that brings the piece to an end', 'The fastest part of the piece', 'The opening theme', 'A repeated section']),
-      },
-      {
-        id: 'q9',
-        prompt: 'Repeat signs (||: :||) in sheet music mean...',
-        correctAnswer: 'Go back and play the section again',
-        choices: shuffle(['Go back and play the section again', 'Play louder', 'Skip this section', 'End the piece']),
-      },
-      {
-        id: 'q10',
-        prompt: 'Why is understanding form useful for performers?',
-        correctAnswer: 'It helps with memorisation, interpretation, and musical narrative',
-        choices: shuffle(['It helps with memorisation, interpretation, and musical narrative', 'It makes the music louder', 'It changes the key', 'It is only useful for composers']),
+        prompt: 'When should you change the sustain pedal?',
+        correctAnswer: 'When the harmony changes',
+        choices: shuffle(['When the harmony changes', 'Every measure', 'Every beat', 'Only at the beginning']),
       },
     ];
   }
@@ -90,7 +112,7 @@
   let quizData = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(17, score, total, 0);
+    progress.saveQuizScore(16, score, total, 0);
   }
 
   function startQuiz() {
@@ -100,105 +122,101 @@
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: What is Musical Form -->
+  <!-- Section 1: The Sustain Pedal -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is Musical Form?</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">The Sustain Pedal</h2>
     <p class="text-[#444] leading-[1.7] mb-3">
-      <strong>Form</strong> is the structure of a piece of music — how sections are arranged to create a complete musical experience. Just as a story has a beginning, middle, and end, music has sections that create tension, contrast, and resolution.
+      The <strong>sustain pedal</strong> (also called the damper pedal) is the rightmost pedal on a piano. When you press it, all the dampers lift off the strings, allowing notes to ring out even after you release the keys. This creates a rich, resonant, connected sound.
     </p>
-    <p class="text-[#444] leading-[1.7]">
-      Understanding form helps you memorise music faster (you see the big picture), perform with more expression (you know where the climax is), and listen more deeply to any piece of music.
+    <p class="text-[#444] leading-[1.7] mb-3">
+      It's one of the most expressive tools a pianist has. Almost every piece of piano music uses it — from classical sonatas to jazz ballads to pop songs.
     </p>
   </section>
 
-  <!-- Section 2: Common Forms -->
+  <!-- Section 2: Hear the Difference -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Common Musical Forms</h2>
-
-    <div class="space-y-4 mb-4">
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">Binary Form (AB)</p>
-        <div class="flex gap-2 mb-2">
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">A</span>
-          <span class="px-3 py-1 rounded bg-navy text-white text-sm font-semibold">B</span>
-        </div>
-        <p class="text-sm text-[#444]">Two contrasting sections. The first section establishes an idea, the second provides contrast. Many folk songs and dances use this form.</p>
-      </div>
-
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">Ternary Form (ABA)</p>
-        <div class="flex gap-2 mb-2">
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">A</span>
-          <span class="px-3 py-1 rounded bg-navy text-white text-sm font-semibold">B</span>
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">A</span>
-        </div>
-        <p class="text-sm text-[#444]">Three sections where the opening section returns after a contrasting middle. This creates a satisfying sense of return. Minuets and many classical pieces use ABA form.</p>
-      </div>
-
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">Rondo Form (ABACA...)</p>
-        <div class="flex gap-2 mb-2">
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">A</span>
-          <span class="px-3 py-1 rounded bg-navy text-white text-sm font-semibold">B</span>
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">A</span>
-          <span class="px-3 py-1 rounded bg-[#28a745] text-white text-sm font-semibold">C</span>
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">A</span>
-        </div>
-        <p class="text-sm text-[#444]">A recurring theme (A) alternates with contrasting episodes (B, C, etc.). Für Elise is a famous example — the iconic opening theme keeps returning between different episodes.</p>
-      </div>
-
-      <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
-        <p class="font-semibold text-navy mb-2">Verse-Chorus Form</p>
-        <div class="flex gap-2 mb-2">
-          <span class="px-3 py-1 rounded bg-navy text-white text-sm font-semibold">Verse</span>
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">Chorus</span>
-          <span class="px-3 py-1 rounded bg-navy text-white text-sm font-semibold">Verse</span>
-          <span class="px-3 py-1 rounded bg-[#ce7e4f] text-white text-sm font-semibold">Chorus</span>
-        </div>
-        <p class="text-sm text-[#444]">The most common form in popular music. Verses tell the story with different lyrics; the chorus is the catchy, memorable hook that repeats.</p>
-      </div>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Hear the Difference</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Listen to the same C major chord played with and without sustain. The difference is dramatic:
+    </p>
+    <div class="flex gap-4 mb-6">
+      <button
+        class="flex-1 p-4 rounded-lg border-2 border-[#e8e6e0] bg-white hover:border-purple transition-all text-center cursor-pointer"
+        onclick={playWithoutSustain}
+      >
+        <p class="font-semibold text-navy mb-1">Without Sustain</p>
+        <p class="text-xs text-[#666]">Short, detached notes</p>
+      </button>
+      <button
+        class="flex-1 p-4 rounded-lg border-2 border-[#e8e6e0] bg-white hover:border-purple transition-all text-center cursor-pointer"
+        onclick={playWithSustain}
+      >
+        <p class="font-semibold text-navy mb-1">With Sustain</p>
+        <p class="text-xs text-[#666]">Rich, connected sound</p>
+      </button>
     </div>
   </section>
 
-  <!-- Section 3: Recognising Sections -->
+  <!-- Section 3: Pedaling Technique -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">How to Recognise Sections</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Pedaling Technique</h2>
     <p class="text-[#444] leading-[1.7] mb-3">
-      When you listen to or read a piece, look for these clues that a new section is starting:
+      The most common technique is <strong>legato pedaling</strong> (also called syncopated pedaling). The sequence is:
     </p>
-    <div class="space-y-2 mb-4">
+    <div class="space-y-3 mb-4">
       <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold shrink-0">•</span>
-        <p class="text-[#444]"><strong>Melody change:</strong> A new theme or significant variation of the original</p>
+        <span class="text-purple font-bold text-lg shrink-0">1</span>
+        <p class="text-[#444]"><strong>Play a note or chord</strong> while the pedal is up.</p>
       </div>
       <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold shrink-0">•</span>
-        <p class="text-[#444]"><strong>Key change:</strong> The music shifts to a new key (modulation)</p>
+        <span class="text-purple font-bold text-lg shrink-0">2</span>
+        <p class="text-[#444]"><strong>Press the pedal down</strong> immediately after playing.</p>
       </div>
       <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold shrink-0">•</span>
-        <p class="text-[#444]"><strong>Dynamic change:</strong> A sudden shift in volume (loud to soft, or vice versa)</p>
+        <span class="text-purple font-bold text-lg shrink-0">3</span>
+        <p class="text-[#444]"><strong>Play the next note/chord.</strong></p>
       </div>
       <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold shrink-0">•</span>
-        <p class="text-[#444]"><strong>Texture change:</strong> More or fewer notes, different accompaniment pattern</p>
+        <span class="text-purple font-bold text-lg shrink-0">4</span>
+        <p class="text-[#444]"><strong>Quickly lift and re-press the pedal</strong> — this clears the old notes and catches the new ones.</p>
       </div>
-      <div class="flex gap-3 items-start">
-        <span class="text-purple font-bold shrink-0">•</span>
-        <p class="text-[#444]"><strong>Repeat signs:</strong> Double bar lines with dots (||: :||) mark section boundaries</p>
-      </div>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-l-4 border-purple">
+      <p class="text-[#444] text-sm"><strong>Key insight:</strong> The pedal change happens <em>after</em> you play the new note, not before. This ensures there's no gap in sound between notes.</p>
     </div>
   </section>
 
-  <!-- Section 4: Für Elise -->
+  <!-- Section 4: Reverb Slider (simulates sustain) -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Try It: Adjustable Sustain</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Use the slider below to adjust the sustain (reverb) amount, then play notes on the keyboard to hear the effect:
+    </p>
+    <div class="mb-4 flex items-center gap-4">
+      <span class="text-sm text-[#666] shrink-0">Dry</span>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.1"
+        value={reverbAmount}
+        oninput={(e) => handleReverbChange(parseFloat((e.target as HTMLInputElement).value))}
+        style="flex: 1; accent-color: #ce7e4f;"
+      />
+      <span class="text-sm text-[#666] shrink-0">Wet</span>
+      <span class="text-sm font-mono text-navy w-10 text-right">{(reverbAmount * 100).toFixed(0)}%</span>
+    </div>
+    <div class="bg-white rounded-lg border border-[#e8e6e0] p-4">
+      <VirtualKeyboard startOctave={3} endOctave={5} onNotePlay={handleNotePlay} {activeKey} showLabels={true} />
+    </div>
+  </section>
+
+  <!-- Section 5: Clair de Lune -->
   {#if song}
     <section class="mb-10">
-      <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Für Elise — A Rondo in Action</h2>
-      <p class="text-[#444] leading-[1.7] mb-3">
-        This simplified version of Beethoven's beloved piece shows the opening "A" theme. In the full piece, this theme returns multiple times between contrasting episodes — classic rondo form (ABACA).
-      </p>
+      <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">{song.title}</h2>
       <p class="text-[#444] leading-[1.7] mb-4">
-        Notice the iconic E-D#-E-D#-E pattern — this is what makes the theme instantly recognisable every time it returns:
+        This simplified excerpt showcases how sustain creates a flowing, dreamlike quality. Try playing it with high reverb to hear how the arpeggiated notes blend together:
       </p>
       <div class="mb-4 bg-white rounded-lg p-4">
         {#each song.lines as line}
@@ -210,55 +228,12 @@
     </section>
   {/if}
 
-  <!-- Section 5: Notation Symbols -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Form-Related Notation</h2>
-    <div class="space-y-3">
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0]">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl font-mono text-navy">||: :||</span>
-          <div>
-            <p class="font-semibold text-navy">Repeat signs</p>
-            <p class="text-sm text-[#444]">Go back to the start of the repeated section and play it again.</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0]">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl font-mono text-navy">D.C.</span>
-          <div>
-            <p class="font-semibold text-navy">Da Capo</p>
-            <p class="text-sm text-[#444]">Go back to the very beginning and play again.</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0]">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl font-mono text-navy">D.S.</span>
-          <div>
-            <p class="font-semibold text-navy">Dal Segno</p>
-            <p class="text-sm text-[#444]">Go back to the segno (𝄋) sign and play from there.</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0]">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl font-mono text-navy">𝄌</span>
-          <div>
-            <p class="font-semibold text-navy">Coda</p>
-            <p class="text-sm text-[#444]">Jump to the coda section (the ending passage).</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Section 6: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test your understanding of musical form?
+        Ready to test your understanding of pedaling and sustain?
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"

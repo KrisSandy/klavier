@@ -33,7 +33,9 @@ class Router {
 
   get lessonId(): number | null {
     const match = this.current.match(/^\/?lesson-(\d+)$/);
-    return match ? parseInt(match[1]) : null;
+    if (!match) return null;
+    const id = parseInt(match[1]);
+    return id >= 1 && id <= 19 ? id : null;
   }
 
   get isSongs() {

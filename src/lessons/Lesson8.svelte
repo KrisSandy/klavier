@@ -1,51 +1,14 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
-  import Metronome from '../components/Metronome.svelte';
-  import SongStaff from '../components/SongStaff.svelte';
+  import RhythmTrainer from '../components/RhythmTrainer.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
-  import { getSongsByLesson } from '../data/songs';
-  import { getNoteById } from '../data/notes';
-  import { playNote, playSequence } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(8)!;
-  const songs = getSongsByLesson(8);
-  const yankeeDoodle = songs[0]; // Yankee Doodle
 
   let showQuiz = $state(false);
-  let isPlaying = $state(false);
-  let highlightIndex = $state(-1);
-  let playbackStop: { stop: () => void } | null = null;
-
-  function playMelody() {
-    if (isPlaying && playbackStop) {
-      playbackStop.stop();
-      isPlaying = false;
-      highlightIndex = -1;
-      return;
-    }
-
-    if (yankeeDoodle) {
-      const allNotes = yankeeDoodle.lines.flat();
-      const noteSequence = allNotes.map(id => {
-        const note = getNoteById(id);
-        return { midiNote: note?.midiNote ?? 60, duration: 1 };
-      });
-
-      isPlaying = true;
-      playbackStop = playSequence(noteSequence, yankeeDoodle.bpm, (index) => {
-        highlightIndex = index;
-      });
-
-      const totalDuration = noteSequence.length * (60 / yankeeDoodle.bpm) * 1000;
-      setTimeout(() => {
-        isPlaying = false;
-        highlightIndex = -1;
-      }, totalDuration + 200);
-    }
-  }
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -59,78 +22,73 @@
   function generateQuestions(): QuizQuestion[] {
     const questions: QuizQuestion[] = [];
 
-    // Question 1: 4/4 beats per measure
+    // Question 1: How many beats do eighth notes get?
     questions.push({
       id: 'q1',
-      prompt: 'How many beats per measure in 4/4 time?',
-      correctAnswer: '4',
-      choices: shuffle(['2', '3', '4', '6']),
+      prompt: 'How many beats does a single eighth note get in 4/4 time?',
+      correctAnswer: '0.5 beats',
+      choices: shuffle(['0.5 beats', '1 beat', '2 beats', '1.5 beats']),
     });
 
-    // Question 2: 3/4 beats per measure
+    // Question 2: How many eighth notes in one beat?
     questions.push({
       id: 'q2',
-      prompt: 'How many beats per measure in 3/4 time?',
-      correctAnswer: '3',
-      choices: shuffle(['2', '3', '4', '6']),
+      prompt: 'How many eighth notes fit in one quarter note (1 beat)?',
+      correctAnswer: '2',
+      choices: shuffle(['1', '2', '3', '4']),
     });
 
-    // Question 3: Which note gets one beat in 6/8
+    // Question 3: How many eighth notes in one measure?
     questions.push({
       id: 'q3',
-      prompt: 'In 6/8 time, which note gets one beat?',
-      correctAnswer: 'Eighth note',
-      choices: shuffle(['Whole note', 'Half note', 'Quarter note', 'Eighth note']),
+      prompt: 'How many eighth notes fit in one measure of 4/4 time?',
+      correctAnswer: '8',
+      choices: shuffle(['4', '6', '8', '16']),
     });
 
-    // Question 4: Which note gets one beat in 4/4
+    // Question 4: Counting pattern
     questions.push({
       id: 'q4',
-      prompt: 'In 4/4 time, which note gets one beat?',
-      correctAnswer: 'Quarter note',
-      choices: shuffle(['Whole note', 'Half note', 'Quarter note', 'Eighth note']),
+      prompt: 'What is the correct way to count a pattern of four eighth notes followed by a quarter note?',
+      correctAnswer: '1-and-2-and-3',
+      choices: shuffle(['1-2-3-4', '1-and-2-and-3', '1-and-2-and-3-and-4', 'one-two-three']),
     });
 
-    // Question 5: Waltz time signature
+    // Question 5: Eighth note symbol
     questions.push({
       id: 'q5',
-      prompt: 'What time signature is typically used for a waltz?',
-      correctAnswer: '3/4',
-      choices: shuffle(['2/4', '3/4', '4/4', '6/8']),
+      prompt: 'Which symbol represents an eighth note?',
+      correctAnswer: '♪',
+      choices: shuffle(['○', '𝅗𝅥', '♩', '♪']),
     });
 
-    // Question 6: Bottom number meaning
+    // Question 6: Two eighth notes duration
     questions.push({
       id: 'q6',
-      prompt: 'In a time signature, what does the bottom number represent?',
-      correctAnswer: 'Which note gets one beat',
-      choices: shuffle([
-        'Total beats in a measure',
-        'How many measures in a piece',
-        'Which note gets one beat',
-        'The tempo of the piece',
-      ]),
+      prompt: 'How many beats do two eighth notes equal together?',
+      correctAnswer: '1 beat',
+      choices: shuffle(['0.5 beats', '1 beat', '1.5 beats', '2 beats']),
     });
 
-    // Question 7: 6/8 vs 3/4 difference
+    // Question 7: Subdivision concept
     questions.push({
       id: 'q7',
-      prompt: 'What is the key difference between 6/8 and 3/4 time?',
-      correctAnswer: 'The accent pattern and grouping of beats',
-      choices: shuffle([
-        'The tempo',
-        'The accent pattern and grouping of beats',
-        '6/8 uses eighth notes and 3/4 uses quarter notes',
-        'There is no difference',
-      ]),
+      prompt: 'An eighth note is created by subdividing what larger note value?',
+      correctAnswer: 'Quarter note',
+      choices: shuffle(['Whole note', 'Half note', 'Quarter note', 'Sixteenth note']),
     });
 
-    // Question 8: Common time symbol
+    // Question 8: "And" counting explanation
     questions.push({
       id: 'q8',
-      prompt: 'What is another name for 4/4 time?',
-      correctAnswer: 'Common time',
-      choices: shuffle(['Simple time', 'Common time', 'Perfect time', 'Waltz time']),
+      prompt: 'In the counting pattern "1-and-2-and-3-and-4-and," the "and" represents which beat?',
+      correctAnswer: 'The second eighth note of each beat',
+      choices: shuffle([
+        'The whole beat',
+        'The first eighth note of each beat',
+        'The second eighth note of each beat',
+        'A rest',
+      ]),
     });
 
     return questions;
@@ -139,7 +97,7 @@
   let quizQuestions = $state(generateQuestions());
 
   function onQuizComplete(score: number, total: number) {
-    progress.saveQuizScore(8, score, total, 0);
+    progress.saveQuizScore(7, score, total, 0);
   }
 
   function startQuiz() {
@@ -149,186 +107,177 @@
 </script>
 
 <LessonLayout {lesson}>
-  <!-- Section 1: What is a Time Signature? -->
+  <!-- Section 1: Subdividing the Beat -->
   <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">What is a Time Signature?</h2>
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Subdividing the Beat</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      A <strong>time signature</strong> (also called a "meter") is a pair of numbers at the beginning of a piece of music that tells you how the beats are organized. It looks like a fraction:
+      So far, you've learned whole notes, half notes, and quarter notes. But music can move faster! An <strong>eighth note</strong> is created by subdividing a beat into two smaller parts.
     </p>
-
-    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0] mb-6">
-      <div class="text-center mb-4">
-        <svg viewBox="0 0 120 100" width="120" height="100">
-          <text x="60" y="40" font-size="32" font-weight="bold" text-anchor="middle" fill="#3d3929">4</text>
-          <line x1="20" y1="50" x2="100" y2="50" stroke="#3d3929" stroke-width="2" />
-          <text x="60" y="85" font-size="32" font-weight="bold" text-anchor="middle" fill="#3d3929">4</text>
-        </svg>
-      </div>
-      <p class="text-center text-[#666] text-sm">
-        <strong>Top number (numerator):</strong> How many beats per measure<br />
-        <strong>Bottom number (denominator):</strong> Which note gets one beat
-      </p>
-    </div>
-
     <p class="text-[#444] leading-[1.7] mb-4">
-      For example, in <strong>4/4 time</strong>:
+      Think of it like this: if a <strong>quarter note = 1 beat</strong>, then:
     </p>
     <ul class="text-[#444] leading-[1.7] space-y-2 ml-6 mb-6">
-      <li>• <strong>Top 4:</strong> There are 4 beats in each measure</li>
-      <li>• <strong>Bottom 4:</strong> A quarter note gets 1 beat</li>
+      <li>• <strong>Two eighth notes = 1 beat</strong></li>
+      <li>• <strong>One eighth note = 0.5 beats (half a beat)</strong></li>
+      <li>• <strong>Four eighth notes = 2 beats</strong></li>
     </ul>
-
-    <p class="text-[#444] leading-[1.7]">
-      Time signatures help you understand the rhythmic structure of a piece. They tell your hands and body how to group the beats together.
-    </p>
-  </section>
-
-  <!-- Section 2: 4/4 Time (Common Time) -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">4/4 Time (Common Time)</h2>
     <p class="text-[#444] leading-[1.7] mb-4">
-      <strong>4/4 time</strong> is the most common time signature in Western music. You've probably been playing in 4/4 this whole time! It's so common that it's also called <strong>"common time,"</strong> and you might see it written as a simple <strong>C</strong> symbol instead of 4/4.
+      When you count eighth notes, you use the pattern <strong>"1-and-2-and-3-and-4-and"</strong>. The numbers (1, 2, 3, 4) represent the main beats, and the "and"s fill in the gaps with the second half of each beat. This is called <strong>subdividing</strong> the beat.
     </p>
-
-    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0] mb-6">
-      <p class="text-sm font-semibold text-navy mb-4">The beat pattern:</p>
-      <div class="flex items-center justify-between">
-        <div class="text-center">
-          <p class="text-2xl font-bold text-navy mb-2">1</p>
-          <p class="text-xs text-[#666]">Strong</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-[#999] mb-2">2</p>
-          <p class="text-xs text-[#666]">Weak</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-[#bbb] mb-2">3</p>
-          <p class="text-xs text-[#666]">Medium</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-[#999] mb-2">4</p>
-          <p class="text-xs text-[#666]">Weak</p>
-        </div>
-      </div>
-      <p class="text-[#666] text-sm mt-4 text-center">
-        The first beat (1) is always the strongest. The third beat (3) has a secondary accent. Beats 2 and 4 are weaker.
-      </p>
-    </div>
-
-    <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4">
-      <p class="text-[#444] text-sm">
-        <strong>💡 Example:</strong> Pop songs, classical symphonies, rock songs — most music you hear uses 4/4 time. It feels natural and balanced.
-      </p>
-    </div>
-  </section>
-
-  <!-- Section 3: 3/4 Time (Waltz) -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">3/4 Time (Waltz)</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      <strong>3/4 time</strong> has 3 beats per measure. It's the natural time signature for waltzes, lullabies, and many classical pieces. It has a flowing, graceful feeling compared to the balanced feel of 4/4.
-    </p>
-
-    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0] mb-6">
-      <p class="text-sm font-semibold text-navy mb-4">The beat pattern:</p>
-      <div class="flex items-center justify-between">
-        <div class="text-center">
-          <p class="text-2xl font-bold text-navy mb-2">1</p>
-          <p class="text-xs text-[#666]">Strong</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-[#999] mb-2">2</p>
-          <p class="text-xs text-[#666]">Weak</p>
-        </div>
-        <div class="text-center">
-          <p class="text-2xl font-bold text-[#999] mb-2">3</p>
-          <p class="text-xs text-[#666]">Weak</p>
-        </div>
-      </div>
-      <p class="text-[#666] text-sm mt-4 text-center">
-        Only the first beat is accented. The pattern repeats: 1-weak-weak, 1-weak-weak. This creates the classic waltz rhythm.
-      </p>
-    </div>
-
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Let's listen to how 3/4 time feels. Practice counting along with a metronome:
-    </p>
-    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
-      <p class="text-sm font-semibold text-navy mb-4">Practice counting 3/4 time (waltz tempo):</p>
-      <Metronome initialBpm={100} />
-    </div>
-  </section>
-
-  <!-- Section 4: 6/8 Time -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">6/8 Time</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      <strong>6/8 time</strong> is more complex. It has 6 beats per measure, but in 6/8, the eighth note gets one beat (not the quarter note). This means there are 6 eighth notes per measure.
-    </p>
-
-    <p class="text-[#444] leading-[1.7] mb-4">
-      What makes 6/8 special is that it's <strong>compound meter</strong>. Even though there are 6 beats, they're grouped in twos (2 groups of 3), so it feels like there are 2 main beats per measure, not 6. This gives it a rolling, lilting feeling.
-    </p>
-
-    <div class="bg-white rounded-lg p-5 border border-[#e8e6e0] mb-6">
-      <p class="text-sm font-semibold text-navy mb-4">6/8 vs 3/4 comparison:</p>
-      <div class="space-y-4">
-        <div>
-          <p class="text-sm font-semibold text-navy mb-2">3/4 Time:</p>
-          <p class="text-[#666] text-sm">
-            <strong>3 quarter notes per measure.</strong> Each quarter note gets 1 beat. It feels like 1-2-3, 1-2-3.
-          </p>
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-navy mb-2">6/8 Time:</p>
-          <p class="text-[#666] text-sm">
-            <strong>6 eighth notes per measure.</strong> Each eighth note gets 1 beat, but they group into 2 strong beats. It feels like 1-2-3, 4-5-6 (or "one-and-a, two-and-a").
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Examples of 6/8 time: "Twinkle Twinkle Little Star," sea shanties, and many folk melodies have that characteristic bouncy, swaying feel.
-    </p>
-  </section>
-
-  <!-- Section 5: Listen to Yankee Doodle -->
-  <section class="mb-10">
-    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Listen to Yankee Doodle</h2>
-    <p class="text-[#444] leading-[1.7] mb-4">
-      Let's listen to a piece written in 4/4 time: "Yankee Doodle." This famous American melody uses the standard 4/4 meter. Press play and count along with the beats!
-    </p>
-
-    {#if yankeeDoodle}
-      {#each yankeeDoodle.lines as line, lineIdx}
-        <div class="mb-6">
-          <p class="text-sm text-[#999] mb-2">Line {lineIdx + 1}</p>
-          <SongStaff notes={line} {highlightIndex} />
-        </div>
-      {/each}
-
-      <button
-        class="bg-purple text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity mb-6"
-        onclick={playMelody}
-      >
-        {isPlaying ? 'Stop Playback' : 'Play Yankee Doodle'}
-      </button>
-    {/if}
-
     <div class="bg-[#fef3ee] border-l-4 border-purple rounded-lg p-4 mt-6">
       <p class="text-sm text-[#444]">
-        <strong>💡 Try this:</strong> As you listen, clap on beats 1 and 3 (the strong and medium-strong beats in 4/4). You'll feel the natural pulse of the music!
+        <strong>💡 Memory tip:</strong> The symbol for an eighth note looks like a quarter note with a flag or hook at the top. When eighth notes appear together, the flags connect into a beam (e.g., ♫).
       </p>
     </div>
   </section>
 
-  <!-- Section 6: Quiz -->
+  <!-- Section 2: Note Duration Chart -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Note Duration Chart</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Here's how all the note durations compare:
+    </p>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Whole note -->
+      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
+        <div class="mb-3 flex justify-center">
+          <svg viewBox="0 0 60 50" width="60" height="50">
+            <ellipse cx="30" cy="25" rx="16" ry="12" fill="none" stroke="#3d3929" stroke-width="2" />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-1 text-sm">Whole</p>
+        <p class="text-xs text-[#666]"><strong>4 beats</strong></p>
+      </div>
+
+      <!-- Half note -->
+      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
+        <div class="mb-3 flex justify-center">
+          <svg viewBox="0 0 60 50" width="60" height="50">
+            <ellipse cx="22" cy="32" rx="14" ry="11" fill="none" stroke="#3d3929" stroke-width="1.5" />
+            <line x1="36" y1="32" x2="36" y2="8" stroke="#3d3929" stroke-width="1.5" />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-1 text-sm">Half</p>
+        <p class="text-xs text-[#666]"><strong>2 beats</strong></p>
+      </div>
+
+      <!-- Quarter note -->
+      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
+        <div class="mb-3 flex justify-center">
+          <svg viewBox="0 0 60 50" width="60" height="50">
+            <ellipse cx="22" cy="32" rx="14" ry="11" fill="#3d3929" />
+            <line x1="36" y1="32" x2="36" y2="8" stroke="#3d3929" stroke-width="1.5" />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-1 text-sm">Quarter</p>
+        <p class="text-xs text-[#666]"><strong>1 beat</strong></p>
+      </div>
+
+      <!-- Eighth note -->
+      <div class="bg-white rounded-lg p-4 border border-[#e8e6e0] text-center">
+        <div class="mb-3 flex justify-center">
+          <svg viewBox="0 0 60 50" width="60" height="50">
+            <ellipse cx="20" cy="32" rx="13" ry="10" fill="#3d3929" />
+            <line x1="33" y1="32" x2="33" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <path d="M 33 8 Q 45 12 40 20" fill="none" stroke="#3d3929" stroke-width="1.5" />
+          </svg>
+        </div>
+        <p class="font-bold text-navy mb-1 text-sm">Eighth</p>
+        <p class="text-xs text-[#666]"><strong>0.5 beats</strong></p>
+      </div>
+    </div>
+
+    <div class="mt-6 bg-white rounded-lg p-5 border border-[#e8e6e0]">
+      <p class="text-sm font-semibold text-navy mb-3">Visual comparison: one measure of 4/4 time</p>
+      <div class="space-y-3 text-sm">
+        <div class="flex items-center gap-4">
+          <span class="text-[#666] w-24">1 whole note:</span>
+          <svg viewBox="0 0 200 40" width="200" height="40">
+            <ellipse cx="100" cy="20" rx="18" ry="13" fill="none" stroke="#3d3929" stroke-width="2" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-[#666] w-24">2 half notes:</span>
+          <svg viewBox="0 0 200 40" width="200" height="40">
+            <ellipse cx="40" cy="25" rx="14" ry="10" fill="none" stroke="#3d3929" stroke-width="1.5" />
+            <line x1="54" y1="25" x2="54" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="130" cy="25" rx="14" ry="10" fill="none" stroke="#3d3929" stroke-width="1.5" />
+            <line x1="144" y1="25" x2="144" y2="8" stroke="#3d3929" stroke-width="1.5" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-[#666] w-24">4 quarter notes:</span>
+          <svg viewBox="0 0 200 40" width="200" height="40">
+            <ellipse cx="25" cy="25" rx="12" ry="9" fill="#3d3929" />
+            <line x1="37" y1="25" x2="37" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="65" cy="25" rx="12" ry="9" fill="#3d3929" />
+            <line x1="77" y1="25" x2="77" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="105" cy="25" rx="12" ry="9" fill="#3d3929" />
+            <line x1="117" y1="25" x2="117" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="145" cy="25" rx="12" ry="9" fill="#3d3929" />
+            <line x1="157" y1="25" x2="157" y2="8" stroke="#3d3929" stroke-width="1.5" />
+          </svg>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-[#666] w-24">8 eighth notes:</span>
+          <svg viewBox="0 0 200 40" width="200" height="40">
+            <ellipse cx="15" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="26" y1="25" x2="26" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="33" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="44" y1="25" x2="44" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="51" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="62" y1="25" x2="62" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="69" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="80" y1="25" x2="80" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="87" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="98" y1="25" x2="98" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="105" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="116" y1="25" x2="116" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="123" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="134" y1="25" x2="134" y2="8" stroke="#3d3929" stroke-width="1.5" />
+            <ellipse cx="141" cy="25" rx="11" ry="8" fill="#3d3929" />
+            <line x1="152" y1="25" x2="152" y2="8" stroke="#3d3929" stroke-width="1.5" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Rhythm Practice -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Rhythm Practice</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Let's practice tapping along to a rhythm pattern with eighth notes. Listen to the metronome and tap when you hear the beats. The pattern below uses a mix of quarter notes and eighth notes at a comfortable pace of 80 BPM.
+    </p>
+    <p class="text-[#444] leading-[1.7] mb-4 text-sm">
+      <strong>Pattern:</strong> Q Q E E Q Q E E Q (where Q = quarter note, E = eighth note)
+    </p>
+    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
+      <RhythmTrainer pattern={[1, 1, 0.5, 0.5, 1, 1, 0.5, 0.5, 1]} bpm={80} />
+    </div>
+  </section>
+
+  <!-- Section 4: Try a Harder Pattern -->
+  <section class="mb-10">
+    <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Try a Harder Pattern</h2>
+    <p class="text-[#444] leading-[1.7] mb-4">
+      Ready for a challenge? Here's a trickier rhythm with more eighth notes. The tempo is also slightly faster at 90 BPM. Pay attention to the counting and try to stay with the beat!
+    </p>
+    <p class="text-[#444] leading-[1.7] mb-4 text-sm">
+      <strong>Pattern:</strong> E E Q E E E E Q Q (more eighth notes, less predictable)
+    </p>
+    <div class="bg-white rounded-lg p-6 border border-[#e8e6e0]">
+      <RhythmTrainer pattern={[0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 1]} bpm={90} />
+    </div>
+  </section>
+
+  <!-- Section 5: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to test what you've learned about time signatures? Take the quiz below!
+        Now that you understand eighth notes and subdivision, let's test your knowledge with a quick quiz!
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"

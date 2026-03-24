@@ -25,6 +25,8 @@
     viewBox="0 -15 {svgWidth} 195"
     xmlns="http://www.w3.org/2000/svg"
     style="display: block; width: 100%; height: auto; max-height: 140px;"
+    role="img"
+    aria-label="Musical staff showing {notes.length} notes"
   >
     <!-- Staff lines -->
     {#each STAFF_LINES as lineY}

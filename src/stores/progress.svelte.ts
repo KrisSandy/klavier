@@ -173,7 +173,7 @@ class ProgressStore {
   }
 
   get completionPercent(): number {
-    return Math.round((this.data.completedLessons.length / 18) * 100); // 18 lessons across phases 1-3
+    return Math.round((this.data.completedLessons.length / 19) * 100); // 19 lessons across phases 1-3
   }
 
   reset() {
