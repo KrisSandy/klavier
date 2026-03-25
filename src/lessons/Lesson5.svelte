@@ -1,17 +1,19 @@
 <script lang="ts">
   import LessonLayout from '../components/LessonLayout.svelte';
+  import Staff from '../components/Staff.svelte';
   import VirtualKeyboard from '../components/VirtualKeyboard.svelte';
   import Metronome from '../components/Metronome.svelte';
   import QuizEngine from '../components/QuizEngine.svelte';
   import type { QuizQuestion } from '../components/QuizEngine.svelte';
   import { getLessonById } from '../data/lessons';
-  import { ALL_LETTERS } from '../data/notes';
+  import { TREBLE_NOTES, ALL_LETTERS } from '../data/notes';
   import { playNote, playSequence } from '../stores/audio';
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(5)!;
 
   let showQuiz = $state(false);
+  let includeTreble = $state(false);
   let isPlayingScale = $state(false);
   let scalePlaybackStop: { stop: () => void } | null = null;
 
@@ -81,17 +83,30 @@
     return a;
   }
 
-  function generateBassClefQuestions(): {
+  interface QuizMeta {
     questions: QuizQuestion[];
     noteMap: Record<string, number>;
     ledgerMap: Record<string, number[]>;
-  } {
+    clefMap: Record<string, 'bass' | 'treble'>;
+  }
+
+  function generateQuizQuestions(withTreble: boolean): QuizMeta {
     const questions: QuizQuestion[] = [];
     const noteMap: Record<string, number> = {};
     const ledgerMap: Record<string, number[]> = {};
+    const clefMap: Record<string, 'bass' | 'treble'> = {};
 
-    // Pick 7 random notes from the 13 available — different subset each time
-    const picked = shuffle([...BASS_NOTES]).slice(0, 7);
+    // Build the pool: always bass, optionally treble
+    type PoolNote = { id: string; name: string; yPos: number; ledgerLines: number[]; clef: 'bass' | 'treble' };
+    const pool: PoolNote[] = BASS_NOTES.map(n => ({ ...n, clef: 'bass' as const }));
+
+    if (withTreble) {
+      for (const n of TREBLE_NOTES) {
+        pool.push({ id: `treble-${n.id}`, name: n.name, yPos: n.yPos, ledgerLines: [], clef: 'treble' });
+      }
+    }
+
+    const picked = shuffle(pool).slice(0, 10);
 
     for (let i = 0; i < picked.length; i++) {
       const note = picked[i];
@@ -99,6 +114,7 @@
       const qId = `q${i}-${note.id}`;
       noteMap[qId] = note.yPos;
       ledgerMap[qId] = note.ledgerLines;
+      clefMap[qId] = note.clef;
       questions.push({
         id: qId,
         prompt: 'What note is this?',
@@ -106,17 +122,17 @@
         choices: shuffle([note.name, ...distractors]),
       });
     }
-    return { questions, noteMap, ledgerMap };
+    return { questions, noteMap, ledgerMap, clefMap };
   }
 
-  let quizData = $state(generateBassClefQuestions());
+  let quizData = $state(generateQuizQuestions(false));
 
   function onQuizComplete(score: number, total: number) {
     progress.saveQuizScore(4, score, total, 0);
   }
 
   function startQuiz() {
-    quizData = generateBassClefQuestions();
+    quizData = generateQuizQuestions(includeTreble);
     showQuiz = true;
   }
 </script>
@@ -367,9 +383,18 @@
   <!-- Section 5: Quiz -->
   <section class="mb-10">
     <h2 class="text-[1.1rem] font-bold text-navy mb-3 pb-2 border-b-2 border-[#dad9d4]">Test Your Knowledge</h2>
+    <label class="flex items-center gap-2 mb-4 cursor-pointer text-[#444] text-[0.95rem]">
+      <input
+        type="checkbox"
+        bind:checked={includeTreble}
+        class="w-4 h-4 accent-[#ce7e4f] cursor-pointer"
+        onchange={() => { if (!showQuiz) return; quizData = generateQuizQuestions(includeTreble); }}
+      />
+      Include treble clef notes too
+    </label>
     {#if !showQuiz}
       <p class="text-[#444] leading-[1.7] mb-4">
-        Ready to identify notes on the bass clef? Each question shows a note on the staff — including ledger line notes above and below. Pick the correct letter name.
+        Ready to identify notes on the bass clef? Each question shows a note on the staff — pick the correct letter name.
       </p>
       <button
         class="bg-navy text-white px-6 py-3 rounded-lg text-[1rem] font-medium cursor-pointer border-none hover:opacity-90 transition-opacity"
@@ -380,76 +405,84 @@
         {#snippet children({ currentQuestion, questionIndex })}
           {@const qId = quizData.questions[questionIndex]?.id}
           {@const noteYPos = qId ? quizData.noteMap[qId] ?? 80 : 80}
-          {@const ledgerLines = qId ? (quizData.ledgerMap[qId] || []) : []}
-          {@const stemUp = noteYPos >= 80}
+          {@const clef = qId ? quizData.clefMap[qId] ?? 'bass' : 'bass'}
+
           <div class="mb-4 flex justify-center">
-            <svg
-              viewBox="0 -15 500 220"
-              xmlns="http://www.w3.org/2000/svg"
-              width="100%"
-              style="max-width: 500px; display: block; margin: 0 auto;"
-              role="img"
-              aria-label="Bass clef staff with a note to identify"
-            >
-              <!-- 5 staff lines -->
-              <line x1="30" y1="40" x2="480" y2="40" stroke="black" stroke-width="1.5" />
-              <line x1="30" y1="60" x2="480" y2="60" stroke="black" stroke-width="1.5" />
-              <line x1="30" y1="80" x2="480" y2="80" stroke="black" stroke-width="1.5" />
-              <line x1="30" y1="100" x2="480" y2="100" stroke="black" stroke-width="1.5" />
-              <line x1="30" y1="120" x2="480" y2="120" stroke="black" stroke-width="1.5" />
+            {#if clef === 'treble'}
+              <div style="max-width: 500px; width: 100%;">
+                <Staff yPos={noteYPos} />
+              </div>
+            {:else}
+              {@const ledgerLines = qId ? (quizData.ledgerMap[qId] || []) : []}
+              {@const stemUp = noteYPos >= 80}
+              <svg
+                viewBox="0 -15 500 220"
+                xmlns="http://www.w3.org/2000/svg"
+                width="100%"
+                style="max-width: 500px; display: block; margin: 0 auto;"
+                role="img"
+                aria-label="Bass clef staff with a note to identify"
+              >
+                <!-- 5 staff lines -->
+                <line x1="30" y1="40" x2="480" y2="40" stroke="black" stroke-width="1.5" />
+                <line x1="30" y1="60" x2="480" y2="60" stroke="black" stroke-width="1.5" />
+                <line x1="30" y1="80" x2="480" y2="80" stroke="black" stroke-width="1.5" />
+                <line x1="30" y1="100" x2="480" y2="100" stroke="black" stroke-width="1.5" />
+                <line x1="30" y1="120" x2="480" y2="120" stroke="black" stroke-width="1.5" />
 
-              <!-- Bass clef -->
-              <text
-                x="42"
-                y="115"
-                font-size="70"
-                font-family="'Noto Music', serif"
-                fill="black"
-              >&#x1D122;</text>
+                <!-- Bass clef -->
+                <text
+                  x="42"
+                  y="115"
+                  font-size="70"
+                  font-family="'Noto Music', serif"
+                  fill="black"
+                >&#x1D122;</text>
 
-              <!-- Ledger lines (short lines through/near the note) -->
-              {#each ledgerLines as ly}
-                <line
-                  x1={280 - 16}
-                  y1={ly}
-                  x2={280 + 16}
-                  y2={ly}
-                  stroke="black"
-                  stroke-width="1.5"
+                <!-- Ledger lines -->
+                {#each ledgerLines as ly}
+                  <line
+                    x1={280 - 16}
+                    y1={ly}
+                    x2={280 + 16}
+                    y2={ly}
+                    stroke="black"
+                    stroke-width="1.5"
+                  />
+                {/each}
+
+                <!-- Note head -->
+                <ellipse
+                  cx="280"
+                  cy={noteYPos}
+                  rx="10"
+                  ry="7"
+                  fill="black"
+                  transform="rotate(-20, 280, {noteYPos})"
                 />
-              {/each}
 
-              <!-- Note head -->
-              <ellipse
-                cx="280"
-                cy={noteYPos}
-                rx="10"
-                ry="7"
-                fill="black"
-                transform="rotate(-20, 280, {noteYPos})"
-              />
-
-              <!-- Stem -->
-              {#if stemUp}
-                <line
-                  x1={280 + 9}
-                  y1={noteYPos}
-                  x2={280 + 9}
-                  y2={noteYPos - 35}
-                  stroke="black"
-                  stroke-width="1.5"
-                />
-              {:else}
-                <line
-                  x1={280 - 9}
-                  y1={noteYPos}
-                  x2={280 - 9}
-                  y2={noteYPos + 35}
-                  stroke="black"
-                  stroke-width="1.5"
-                />
-              {/if}
-            </svg>
+                <!-- Stem -->
+                {#if stemUp}
+                  <line
+                    x1={280 + 9}
+                    y1={noteYPos}
+                    x2={280 + 9}
+                    y2={noteYPos - 35}
+                    stroke="black"
+                    stroke-width="1.5"
+                  />
+                {:else}
+                  <line
+                    x1={280 - 9}
+                    y1={noteYPos}
+                    x2={280 - 9}
+                    y2={noteYPos + 35}
+                    stroke="black"
+                    stroke-width="1.5"
+                  />
+                {/if}
+              </svg>
+            {/if}
           </div>
         {/snippet}
       </QuizEngine>

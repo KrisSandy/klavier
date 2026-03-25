@@ -10,7 +10,7 @@
   import { progress } from '../stores/progress.svelte';
 
   const lesson = getLessonById(6)!;
-  const songs = getSongsByLesson(5);
+  const songs = getSongsByLesson(6);
   const kushi = songs[0]; // Kushi Theme
 
   let isPlaying = $state(false);
